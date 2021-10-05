@@ -27,7 +27,7 @@ class Alpha_sms_Public {
 	 *
 	 * @since    1.0.0
 	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
+	 * @var      string $plugin_name The ID of this plugin.
 	 */
 	private $plugin_name;
 
@@ -36,22 +36,24 @@ class Alpha_sms_Public {
 	 *
 	 * @since    1.0.0
 	 * @access   private
-	 * @var      string    $version    The current version of this plugin.
+	 * @var      string $version The current version of this plugin.
 	 */
 	private $version;
+	private $options;
 
 	/**
 	 * Initialize the class and set its properties.
 	 *
+	 * @param string $plugin_name The name of the plugin.
+	 * @param string $version The version of this plugin.
 	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of the plugin.
-	 * @param      string    $version    The version of this plugin.
 	 */
-	public function __construct( $plugin_name, $version ) {
+	public function __construct($plugin_name, $version)
+	{
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
+		$this->options = get_option($this->plugin_name);
 	}
 
 	/**
@@ -59,7 +61,8 @@ class Alpha_sms_Public {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_styles() {
+	public function enqueue_styles()
+	{
 
 		/**
 		 * This function is provided for demonstration purposes only.
@@ -73,7 +76,7 @@ class Alpha_sms_Public {
 		 * class.
 		 */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/alpha_sms-public.css', array(), $this->version, 'all' );
+		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/alpha_sms-public.css', [], $this->version, 'all');
 
 	}
 
@@ -82,7 +85,8 @@ class Alpha_sms_Public {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts()
+	{
 
 		/**
 		 * This function is provided for demonstration purposes only.
@@ -96,7 +100,7 @@ class Alpha_sms_Public {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/alpha_sms-public.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/alpha_sms-public.js', ['jquery'], $this->version, false);
 
 	}
 
@@ -111,13 +115,13 @@ class Alpha_sms_Public {
 		$value = isset($_POST['billing_phone']) ? esc_attr($_POST['billing_phone']) : $user->billing_phone;
 		?>
 
-		<p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide">
-			<label for="reg_billing_phone"><?php _e('Phone', 'woocommerce'); ?> <span class="required">*</span>
-			</label>
-			<input type="tel" minlength="11" maxlength="11" class="input-text" name="billing_phone"
-			       id="reg_billing_phone" value="<?php echo $value ?>"/>
-		</p>
-		<div class="clear"></div>
+        <p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide">
+            <label for="reg_billing_phone"><?php _e('Phone', 'woocommerce'); ?> <span class="required">*</span>
+            </label>
+            <input type="tel" minlength="11" maxlength="11" class="input-text" name="billing_phone"
+                   id="reg_billing_phone" value="<?php echo $value ?>"/>
+        </p>
+        <div class="clear"></div>
 
 		<?php
 	}
@@ -150,43 +154,40 @@ class Alpha_sms_Public {
 	 */
 	public function wp_phone_on_register()
 	{
-		$billing_phone = ( ! empty( $_POST['billing_phone'] ) ) ? sanitize_text_field( $_POST['billing_phone'] ) : '';
+		$billing_phone = (!empty($_POST['billing_phone'])) ? sanitize_text_field($_POST['billing_phone']) : '';
 
 		?>
-		<p>
-			<label for="billing_phone"><?php _e( 'Phone', $this->plugin_name ) ?><br />
-				<input type="text" name="billing_phone" id="billing_phone" class="input" value="<?php echo esc_attr(  $billing_phone  ); ?>" size="25" /></label>
-		</p>
+        <p>
+            <label for="billing_phone"><?php _e('Phone', $this->plugin_name) ?><br/>
+                <input type="text" name="billing_phone" id="billing_phone" class="input"
+                       value="<?php echo esc_attr($billing_phone); ?>" size="25"/></label>
+        </p>
 		<?php
 	}
 
 	public function wp_phone_field_validation($errors, $sanitized_user_login, $user_email)
 	{
-		if ( empty( $_POST['billing_phone'] ) || !is_numeric( $_POST['billing_phone'] ) || !$this->validateNumber($_POST['billing_phone']) ) {
-			$errors->add( 'phone_error', sprintf('<strong>%s</strong>: %s',__( 'ERROR', $this->plugin_name ),__( 'You phone number is not valid.', $this->plugin_name ) ) );
+		if (empty($_POST['billing_phone']) || !is_numeric($_POST['billing_phone']) || !$this->validateNumber(sanitize_text_field($_POST['billing_phone']))) {
+			$errors->add('phone_error', sprintf('<strong>%s</strong>: %s', __('ERROR', $this->plugin_name), __('You phone number is not valid.', $this->plugin_name)));
 		}
 
-        $billing_phone = $_POST['billing_phone'];
+		$billing_phone = sanitize_text_field($_POST['billing_phone']);
 
-		if(!empty($errors->errors)) return $errors;
+		if ($this->check_duplicate_billing_phone($billing_phone)) {
+			$errors->add('duplicate_phone_error', sprintf('<strong>%s</strong>: %s', __('ERROR', $this->plugin_name), __('This mobile_phone is already registered, please choose another one.', $this->plugin_name)));
+		}
+
+		if (!empty($errors->errors)) return $errors;
 
 		return $this->startOTPTransaction($errors, $sanitized_user_login, $user_email, $billing_phone);
 	}
-
-	public function wp_user_register( $user_id  )
-	{
-		if ( ! empty( $_POST['billing_phone'] ) ) {
-			update_user_meta( $user_id, 'billing_phone', sanitize_text_field( $_POST['billing_phone'] ) );
-		}
-	}
-
 
 	/**
 	 * Validate Bangladeshi phone number format
 	 * @param $num
 	 * @return false|int|string
 	 */
-	private function validateNumber($num)
+	public function validateNumber($num)
 	{
 		if (!$num) {
 			return false;
@@ -199,6 +200,20 @@ class Alpha_sms_Public {
 		if (is_numeric($number) && strlen($number) === 13 && in_array(substr($number, 0, 5), $ext, true)) {
 			return $number;
 		}
+
+		return false;
+	}
+
+	/**
+	 * check duplicate phone number in database
+	 * @param $phone_number
+	 */
+	public function check_duplicate_billing_phone($phone_number)
+	{
+		global $wpdb;
+		$result = $wpdb->get_results("SELECT * from `{$wpdb->prefix}usermeta` WHERE meta_key = 'mobile_phone' AND REPLACE(meta_value, ' ', '') = '{$phone_number}'");
+
+		if ($result) return true;
 
 		return false;
 	}
@@ -216,10 +231,18 @@ class Alpha_sms_Public {
 
 	public function sendChallenge($errors, $user_login, $user_email, $billing_phone)
 	{
-		do_action($this->plugin_name.'_generate_otp',$errors, $user_login, $user_email, $billing_phone);
+		do_action($this->plugin_name . '_generate_otp', $errors, $user_login, $user_email, $billing_phone);
 	}
 
-	public function otp_challenge($errors, $user_login, $user_email, $billing_phone, $password = ''){
+	public function wp_user_register($user_id)
+	{
+		if (!empty($_POST['billing_phone'])) {
+			update_user_meta($user_id, 'billing_phone', sanitize_text_field($_POST['billing_phone']));
+		}
+	}
+
+	public function otp_challenge($errors, $user_login, $user_email, $billing_phone, $password = '')
+	{
 
 		$_SESSION['current_url'] = $this->currentPageUrl();
 		$_SESSION['user_login'] = $user_login;
@@ -230,24 +253,27 @@ class Alpha_sms_Public {
 		$this->handleOTPAction($user_login, $user_email, $billing_phone);
 	}
 
-	public function currentPageUrl() {
+	public function currentPageUrl()
+	{
 		global $wp;
-		return add_query_arg( $wp->query_vars, home_url( $wp->request ) );
+
+		return add_query_arg($wp->query_vars, home_url($wp->request));
 	}
 
-	public function handleOTPAction($user_login, $user_email, $billing_phone) {
+	public function handleOTPAction($user_login, $user_email, $billing_phone)
+	{
 
 		$otp_template = 'An OTP Code has been sent to ##phone##';
-		$message = str_replace("##phone##",$billing_phone,$otp_template);
+		$message = str_replace("##phone##", $billing_phone, $otp_template);
 
-		if(!headers_sent()) header('Content-Type: text/html; charset=utf-8');
+		if (!headers_sent()) header('Content-Type: text/html; charset=utf-8');
 
 		$htmlContent = "
 <div class='otp-container'>
     <h1>ENTER OTP</h1>
     <p>{$message}</p>
-    <form action='". admin_url('admin-ajax.php')."' method='post' id='otp_form'>
-    ".wp_nonce_field('wp_otp_action',$this->plugin_name)."
+    <form action='" . admin_url('admin-ajax.php') . "' method='post' id='otp_form'>
+    " . wp_nonce_field('wp_otp_action', $this->plugin_name) . "
     <input name='action' value='wp_otp_action' type='hidden'>
         <div class='userInput'/>
             <input type='number' id='otp_code' required autofocus />
@@ -267,12 +293,49 @@ class Alpha_sms_Public {
 
 	public function process_otp_action()
 	{
-		if ( empty($_POST) || !wp_verify_nonce($_POST[$this->plugin_name],'wp_otp_action') ) {
+		if (empty($_POST) || !wp_verify_nonce($_POST[$this->plugin_name], 'wp_otp_action')) {
 			echo 'You targeted the right function, but sorry, your nonce did not verify.';
 			die();
 		}
 
-        // do your function here
-	    echo json_encode(array('status' => '200'));
+		// do your function here
+		echo json_encode(['status' => '200']);
 	}
+
+
+	/**
+	 * WordPress login with Phone Number
+	 *
+	 */
+
+	public function login_enqueue_styles()
+	{
+		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/otp-login-form.css', [], $this->version, 'all');
+		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/otp-login-form.js', ['jquery'], $this->version, false);
+    }
+
+    // Add OTP in login form
+	public function add_otp_in_login_form()
+	{
+		require_once('partials/' . $this->plugin_name . '-otp-login-form.php');
+	}
+
+    // verify number and send otp
+	public function save_and_send_otp_login()
+	{
+        global $wpdb;
+
+		$api_key = !empty($this->options['api_key']) ? $this->options['api_key'] : '';
+		$sender_id = !empty($this->options['sender_id']) ? trim($this->options['sender_id']) : '';
+
+		//get login No of tries
+		$login_no_of_retries = 3;
+
+		//get the validity time of a password
+		$password_validity = 60;
+
+		//get the user by phone
+		$mobile_phone_posted = isset($_POST['mobile_phone']) ? trim(sanitize_text_field($_POST['mobile_phone'])) : "";
+		$mobile_phone = str_replace(' ', '', $mobile_phone_posted);
+    }
 }

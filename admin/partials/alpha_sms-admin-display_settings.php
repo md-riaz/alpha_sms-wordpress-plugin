@@ -35,6 +35,7 @@ if (!defined('WPINC')) die;
 
 		$woocommerce_reg_phone = (isset($options['woocommerce_reg_phone']) && !empty($options['woocommerce_reg_phone'])) ? 1 : 0;
 		$reg_allow_phone_wp = (isset($options['reg_allow_phone_wp']) && !empty($options['reg_allow_phone_wp'])) ? 1 : 0;
+		$login_phone = (isset($options['login_phone']) && !empty($options['login_phone'])) ? 1 : 0;
 
 
 		settings_fields($this->plugin_name);
@@ -108,6 +109,18 @@ if (!defined('WPINC')) die;
                                 value="1"
 						    <?php checked($reg_allow_phone_wp, 1); ?> />
                         <span><?php esc_attr_e('Allow Phone in WordPress Registration Form', $this->plugin_name); ?></span>
+                    </label>
+                </div>
+
+                <div class="mb-2">
+                    <label for="<?php echo $this->plugin_name; ?>-login_phone">
+                        <input
+                                type="checkbox"
+                                id="<?php echo $this->plugin_name; ?>-login_phone"
+                                name="<?php echo $this->plugin_name; ?>[login_phone]"
+                                value="1"
+						    <?php checked($login_phone, 1); ?> />
+                        <span><?php esc_attr_e('Login with mobile', $this->plugin_name); ?></span>
                     </label>
                 </div>
 

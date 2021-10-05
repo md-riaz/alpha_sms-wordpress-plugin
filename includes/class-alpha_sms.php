@@ -217,10 +217,24 @@ class Alpha_sms
 			// otp transaction challenge
 			$this->loader->add_action($this->plugin_name.'_generate_otp', $plugin_public, 'otp_challenge', 10, 4);
 			$this->loader->add_action('wp_ajax_nopriv_wp_otp_action', $plugin_public, 'process_otp_action');
+			$this->loader->add_action('init', $plugin_public, 'handle_otp_form_action'); // ekhan theke kaj korte hobe
 
 			// Finally, save our extra registration user meta.
 			$this->loader->add_action( 'user_register', $plugin_public, 'wp_user_register' );
 
+		}
+
+
+
+		// Login with phone number
+		if ($this->options['login_phone']){
+			// load css and js to login page
+			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_styles');
+			// add otp form to login page
+			$this->loader->add_action('login_form', $plugin_public, 'add_otp_in_login_form');
+			// phone number submit action from jQuery $.post
+			$this->loader->add_action('wp_ajax_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
+			$this->loader->add_action('wp_ajax_nopriv_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
 		}
 	}
 

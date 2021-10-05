@@ -1,0 +1,22 @@
+/*login page otp styles*/
+#loginform{
+    overflow: hidden !important;
+}
+.float-none {
+    float: none !important;
+}
+#login {
+    width: 400px;
+}
+
+.d-flex{
+    display: flex !important;
+}
+.justify-content-around {
+    justify-content: space-around;
+}
+
+.my-3 {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}

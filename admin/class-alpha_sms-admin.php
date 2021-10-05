@@ -182,6 +182,7 @@ class Alpha_sms_Admin {
 
 		$options['woocommerce_reg_phone'] = (isset($input['woocommerce_reg_phone']) && !empty($input['woocommerce_reg_phone'])) ? 1 : 0;
 		$options['reg_allow_phone_wp'] = (isset($input['reg_allow_phone_wp']) && !empty($input['reg_allow_phone_wp'])) ? 1 : 0;
+		$options['login_phone'] = (isset($input['login_phone']) && !empty($input['login_phone'])) ? 1 : 0;
 
 		return $options;
 	}
