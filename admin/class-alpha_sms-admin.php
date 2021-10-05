@@ -20,15 +20,14 @@
  * @subpackage Alpha_sms/admin
  * @author     Alpha Net Developer Team <support@alpha.net.bd>
  */
-class Alpha_sms_Admin
-{
+class Alpha_sms_Admin {
 
 	/**
 	 * The ID of this plugin.
 	 *
 	 * @since    1.0.0
 	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
+	 * @var      string $plugin_name The ID of this plugin.
 	 */
 	private $plugin_name;
 
@@ -37,16 +36,16 @@ class Alpha_sms_Admin
 	 *
 	 * @since    1.0.0
 	 * @access   private
-	 * @var      string    $version    The current version of this plugin.
+	 * @var      string $version The current version of this plugin.
 	 */
 	private $version;
 
 	/**
 	 * Initialize the class and set its properties.
 	 *
+	 * @param string $plugin_name The name of this plugin.
+	 * @param string $version The version of this plugin.
 	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of this plugin.
-	 * @param      string    $version    The version of this plugin.
 	 */
 	public function __construct($plugin_name, $version)
 	{
@@ -75,7 +74,7 @@ class Alpha_sms_Admin
 		 * class.
 		 */
 
-		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/alpha_sms-admin.css', array(), $this->version, 'all');
+		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/alpha_sms-admin.css', [], $this->version, 'all');
 	}
 
 	/**
@@ -98,7 +97,7 @@ class Alpha_sms_Admin
 		 * class.
 		 */
 
-		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/alpha_sms-admin.js', array('jquery'), $this->version, false);
+		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/alpha_sms-admin.js', ['jquery'], $this->version, false);
 	}
 
 	/**
@@ -106,7 +105,7 @@ class Alpha_sms_Admin
 	 *
 	 * @since    1.0.0
 	 */
-	public function alpha_sms_setup_page()
+	public function display_setting_page()
 	{
 		require_once('partials/' . $this->plugin_name . '-admin-display_settings.php');
 	}
@@ -116,7 +115,7 @@ class Alpha_sms_Admin
 	 *
 	 * @since    1.0.0
 	 */
-	public function alpha_sms_campaign_page()
+	public function display_campaign_page()
 	{
 		require_once('partials/' . $this->plugin_name . '-admin-display_campaign.php');
 	}
@@ -127,7 +126,7 @@ class Alpha_sms_Admin
 	 * @since    1.0.0
 	 */
 
-	public function alpha_sms_admin_menu()
+	public function add_admin_menu()
 	{
 
 		// Primary Main menu 
@@ -136,14 +135,14 @@ class Alpha_sms_Admin
 			'Alpha SMS',
 			'manage_options',
 			$this->plugin_name,
-			array($this, 'alpha_sms_campaign_page'),
+			[$this, 'display_campaign_page'],
 			'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAyNS4wLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiDQoJIHZpZXdCb3g9IjAgMCAzMiAzMiIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzIgMzI7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+DQoJLnN0MHtmaWxsOiM0QkRFOUQ7fQ0KCS5zdDF7ZmlsbDojMkYzNTNCO30NCjwvc3R5bGU+DQo8Zz4NCgk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMTEuMiwxYzIuOS0xLjIsNi40LTEsOS4yLDAuNmMyLjYsMS41LDQuNiw0LjIsNS4xLDcuMmMwLjMsMS43LDAuMSwzLjMtMC4zLDVjMC0xLjEsMC4xLTIuMy0wLjItMy40DQoJCWMtMC42LTMtMi42LTUuOC01LjMtNy4yYy0yLjMtMS4yLTUtMS42LTcuNS0wLjlDOS4yLDMuMSw2LjYsNS4yLDUuMyw4Yy0wLjksMi42LTAuNiw1LjYsMC42LDguMWMwLjksMiwyLjUsMy42LDQuMyw0LjgNCgkJYzIuNCwxLjcsNC44LDMuNSw3LjEsNS4yYy0yLjYsMC01LjIsMC03LjgsMGMtMy4yLDAuMS02LjEtMi45LTYtNi4xYzAtNC4zLDAtOC43LDAtMTNjMC0zLjEsMi45LTUuOCw2LTUuNw0KCQlDMTAuMSwxLjIsMTAuNywxLjIsMTEuMiwxeiIvPg0KCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik05LjQsMTAuMWMxLjEtMC41LDIuNiwwLjIsMi44LDEuNGMwLjMsMS4yLTAuOCwyLjYtMi4xLDIuNGMtMS4zLDAtMi4yLTEuNC0xLjktMi42DQoJCUM4LjQsMTAuOSw4LjksMTAuNCw5LjQsMTAuMXoiLz4NCgk8cGF0aCBjbGFzcz0ic3QxIiBkPSJNMTUuMSwxMC4xYzEuMS0wLjUsMi41LDAuMSwyLjgsMS4zYzAuMywxLjEtMC40LDIuMy0xLjUsMi41Yy0xLjEsMC4zLTIuNC0wLjYtMi41LTEuOA0KCQlDMTMuOCwxMS4zLDE0LjMsMTAuNSwxNS4xLDEwLjF6Ii8+DQoJPHBhdGggY2xhc3M9InN0MCIgZD0iTTIwLjcsMTAuMWMxLjItMC42LDIuOCwwLjMsMi45LDEuNmMwLjIsMS4yLTEsMi40LTIuMiwyLjJjLTEuMS0wLjEtMi0xLjEtMS45LTIuMg0KCQlDMTkuNiwxMS4xLDIwLDEwLjQsMjAuNywxMC4xeiIvPg0KPC9nPg0KPGc+DQoJPGc+DQoJCTxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0yMC45LDEuMmMxLjIsMCwyLjQtMC4xLDMuNSwwLjNjMi40LDAuOCw0LjEsMy4yLDQuMSw1LjdjMCwzLjksMCw3LjksMCwxMS44YzAsMS4zLDAsMi42LTAuNiwzLjcNCgkJCWMtMC45LDItMywzLjMtNS4xLDMuNGMwLjEsMS45LDAuMSwzLjgsMC4yLDUuN2MtMS4xLTMuMy0yLjEtNi42LTMuMi05LjljMi44LTEsNS4xLTMsNi40LTUuNmMxLjUtMywxLjUtNi43LDAuMS05LjgNCgkJCUMyNS4xLDQuMiwyMy4xLDIuMywyMC45LDEuMnoiLz4NCgk8L2c+DQo8L2c+DQo8L3N2Zz4NCg==',
 			76
 		);
 
-		add_submenu_page($this->plugin_name, 'SMS Campain', 'Campain', 'manage_options', $this->plugin_name, array($this, 'alpha_sms_campaign_page'));
+		add_submenu_page($this->plugin_name, 'SMS Campain', 'Campain', 'manage_options', $this->plugin_name, [$this, 'display_campaign_page']);
 
-		add_submenu_page($this->plugin_name, 'Alpha SMS Settings', 'Settings', 'manage_options', $this->plugin_name . '_settings', array($this, 'alpha_sms_setup_page'));
+		add_submenu_page($this->plugin_name, 'Alpha SMS Settings', 'Settings', 'manage_options', $this->plugin_name . '_settings', [$this, 'display_setting_page']);
 	}
 
 	/**
@@ -159,7 +158,7 @@ class Alpha_sms_Admin
 		 * The "plugins.php" must match with the previously added add_submenu_page first option.
 		 * For custom post type you have to change 'plugins.php?page=' to 'edit.php?post_type=your_custom_post_type&page='
 		 */
-		$settings_link = array('<a href="' . admin_url('admin.php?page=' . $this->plugin_name . '_settings') . '">' . __('Settings', $this->plugin_name) . '</a>',);
+		$settings_link = ['<a href="' . admin_url('admin.php?page=' . $this->plugin_name . '_settings') . '">' . __('Settings', $this->plugin_name) . '</a>',];
 
 		// -- OR --
 
@@ -171,7 +170,7 @@ class Alpha_sms_Admin
 
 	/**
 	 * Validate fields from admin area plugin settings form ('exopite-lazy-load-xt-admin-display.php')
-	 * @param  mixed $input as field form settings form
+	 * @param mixed $input as field form settings form
 	 * @return mixed as validated fields
 	 */
 	public function validate($input)
@@ -179,70 +178,79 @@ class Alpha_sms_Admin
 		$options = get_option($this->plugin_name);
 
 		$options['api_key'] = (isset($input['api_key']) && !empty($input['api_key'])) ? esc_attr($input['api_key']) : '';
-		$options['order_pending_payment'] = (isset($input['order_pending_payment']) && !empty($input['order_pending_payment'])) ? 1 : 0;
-		$options['order_processing'] = (isset($input['order_processing']) && !empty($input['order_processing'])) ? 1 : 0;
-		$options['order_on_hold'] = (isset($input['order_on_hold']) && !empty($input['order_on_hold'])) ? 1 : 0;
-		$options['order_completed'] = (isset($input['order_completed']) && !empty($input['order_completed'])) ? 1 : 0;
-		$options['order_cancelled'] = (isset($input['order_cancelled']) && !empty($input['order_cancelled'])) ? 1 : 0;
-		$options['order_refunded'] = (isset($input['order_refunded']) && !empty($input['order_refunded'])) ? 1 : 0;
+		$options['sender_id'] = (isset($input['sender_id']) && !empty($input['sender_id'])) ? esc_attr($input['sender_id']) : '';
+
+		$options['woocommerce_reg_phone'] = (isset($input['woocommerce_reg_phone']) && !empty($input['woocommerce_reg_phone'])) ? 1 : 0;
+		$options['reg_allow_phone_wp'] = (isset($input['reg_allow_phone_wp']) && !empty($input['reg_allow_phone_wp'])) ? 1 : 0;
 
 		return $options;
 	}
 
 	public function options_update()
 	{
-		register_setting($this->plugin_name, $this->plugin_name, array(
-			'sanitize_callback' => array($this, 'validate'),
-		));
+		register_setting($this->plugin_name, $this->plugin_name, [
+			'sanitize_callback' => [$this, 'validate'],
+		]);
 	}
 
 	public function alpha_sms_send_campaign()
 	{
-		$numbers = (isset($_POST[$this->plugin_name]['numbers']) && !empty($_POST[$this->plugin_name]['numbers'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['numbers']) : false;
+		$numbersArr = [];
+
+		$numbers = (isset($_POST[$this->plugin_name]['numbers']) && !empty($_POST[$this->plugin_name]['numbers'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['numbers']) : '';
 		$include_woo_users = (isset($_POST[$this->plugin_name]['woocommerce_users']) && !empty($_POST[$this->plugin_name]['woocommerce_users'])) ? 1 : 0;
 		$body = (isset($_POST[$this->plugin_name]['body']) && !empty($_POST[$this->plugin_name]['body'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['body']) : false;
 
-		// Empty fields
-		if (!$numbers || !$body) {
-			$this->add_flash_notice(__("Fill the required fields properly", $this->plugin_name), "error", true);
+		// Empty body
+		if (!$body) {
+			$this->add_flash_notice(__("Fill the required fields properly", $this->plugin_name), "error");
 
 			// Redirect to plugin page
-			wp_redirect( $_SERVER['HTTP_REFERER'] );
+			wp_redirect($_SERVER['HTTP_REFERER']);
 			exit();
 		}
 
-		// split and join
-		$numbersArr = explode(PHP_EOL, $numbers);
+		if ($numbers) {
+			// split by new line
+			$numbersArr = explode(PHP_EOL, $numbers);
+		}
+
+		if ($include_woo_users) {
+			$woo_numbers = $this->getWoocommerceCustomerPhone();
+			$numbersArr = array_merge($numbersArr, $woo_numbers);
+		}
+
+		// Final Numbers
 		$numbers = implode(',', $numbersArr);
 
 		//Grab all options
 		$options = get_option($this->plugin_name);
 		$api_key = !empty($options['api_key']) ? $options['api_key'] : '';
+		$sender_id = !empty($options['sender_id']) ? trim($options['sender_id']) : '';
 
-		echo '<pre>';
-		print_r($this->getWoocommerceOrderPhoneNumbers());
-		echo '</pre>';
-		exit;
+		require_once plugin_dir_path(__DIR__) . 'includes/sms.class.php';
 
+		$sms = new AlphaSMS($api_key);
+		$sms->numbers = $numbers;
+		$sms->body = $body;
+		$sms->sender_id = $sender_id;
 
+		$response = $sms->Send();
 
+		if (!$response) {
+			$this->add_flash_notice(__("Something went wrong, please try again.", $this->plugin_name), "error");
 
+		} else if ($response->error !== 0) {
+			$this->add_flash_notice(__($response->msg), 'error');
 
+		} else {
+			$this->add_flash_notice(__($response->msg), 'success');
+		}
 
 		// Redirect to plugin page
-		wp_redirect( $_SERVER['HTTP_REFERER'] );
+		wp_redirect($_SERVER['HTTP_REFERER']);
 		exit();
 	}
-
-
-	public function getWoocommerceOrderPhoneNumbers()
-	{
-		global $wpdb;
-
-		return $wpdb->get_col( "SELECT meta_value FROM `{$wpdb->prefix}postmeta` WHERE meta_key = '_billing_phone'" );
-	}
-
-
 
 	/**
 	 * Add a flash notice to {prefix}options table until a full page refresh is done
@@ -253,11 +261,12 @@ class Alpha_sms_Admin
 	 * @return void
 	 */
 
-	function add_flash_notice( $notice = "", $type = "warning", $dismissible = true ) {
+	public function add_flash_notice($notice = "", $type = "warning", $dismissible = true)
+	{
 		// Here we return the notices saved on our option, if there are no notices, then an empty array is returned
-		$notices = get_option( $this->plugin_name . '_notices', array() );
+		$notices = get_option($this->plugin_name . '_notices', []);
 
-		$dismissible_text = ( $dismissible ) ? "is-dismissible" : "";
+		$dismissible_text = ($dismissible) ? "is-dismissible" : "";
 
 		// We add our new notice.
 		$notices[] = [
@@ -267,7 +276,22 @@ class Alpha_sms_Admin
 		];
 
 		// Then we update the option with our notices array
-		update_option($this->plugin_name . '_notices', $notices );
+		update_option($this->plugin_name . '_notices', $notices);
+	}
+
+	public function getWoocommerceCustomerPhone()
+	{
+		global $wpdb;
+
+		// return $wpdb->get_col( "SELECT DISTINCT meta_value FROM `{$wpdb->prefix}postmeta` WHERE meta_key = '_billing_phone'" );
+
+		return $wpdb->get_col("
+        SELECT DISTINCT um.meta_value FROM {$wpdb->prefix}users as u
+        INNER JOIN {$wpdb->prefix}usermeta as um ON um.user_id = u.ID
+        INNER JOIN {$wpdb->prefix}usermeta as um2 ON um2.user_id = u.ID
+        WHERE um.meta_key LIKE 'billing_phone' AND um.meta_value != ''
+        AND um2.meta_key LIKE 'wp_capabilities' AND um2.meta_value NOT LIKE '%administrator%'
+    ");
 	}
 
 	/**
@@ -276,11 +300,12 @@ class Alpha_sms_Admin
 	 * @return void
 	 */
 
-	function display_flash_notices() {
-		$notices = get_option( $this->plugin_name . '_notices', array() );
+	public function display_flash_notices()
+	{
+		$notices = get_option($this->plugin_name . '_notices', []);
 
 		// Iterate through our notices to be displayed and print them.
-		foreach ( $notices as $notice ) {
+		foreach ($notices as $notice) {
 			printf('<div class="notice notice-%1$s %2$s"><p>%3$s</p></div>',
 				$notice['type'],
 				$notice['dismissible'],
@@ -289,8 +314,9 @@ class Alpha_sms_Admin
 		}
 
 		// Now we reset our options to prevent notices being displayed forever.
-		if( ! empty( $notices ) ) {
-			delete_option( $this->plugin_name . '_notices', array() );
+		if (!empty($notices)) {
+			delete_option($this->plugin_name . '_notices', []);
 		}
 	}
+
 }

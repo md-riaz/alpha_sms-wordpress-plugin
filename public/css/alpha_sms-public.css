@@ -2,3 +2,12 @@
  * All of the CSS for your public-facing functionality should be
  * included in this file.
  */
+
+.otp-container {
+    max-width: 500px;
+    margin: auto;
+}
+
+.otp-container button {
+    margin: 25px auto 0 auto;
+}

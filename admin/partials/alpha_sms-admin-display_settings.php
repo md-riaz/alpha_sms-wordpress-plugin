@@ -30,13 +30,12 @@ if (!defined('WPINC')) die;
 		//Grab all options
 		$options = get_option($this->plugin_name);
 
-		$api_key = (isset($options['api_key']) && !empty($options['api_key'])) ? esc_attr($options['api_key']) : 'Enter Your API Key';
-		$order_pending_payment = (isset($options['order_pending_payment']) && !empty($options['order_pending_payment'])) ? 1 : 0;
-		$order_processing = (isset($options['order_processing']) && !empty($options['order_processing'])) ? 1 : 0;
-		$order_on_hold = (isset($options['order_on_hold']) && !empty($options['order_on_hold'])) ? 1 : 0;
-		$order_completed = (isset($options['order_completed']) && !empty($options['order_completed'])) ? 1 : 0;
-		$order_cancelled = (isset($options['order_cancelled']) && !empty($options['order_cancelled'])) ? 1 : 0;
-		$order_refunded = (isset($options['order_refunded']) && !empty($options['order_refunded'])) ? 1 : 0;
+		$api_key = (isset($options['api_key']) && !empty($options['api_key'])) ? esc_attr($options['api_key']) : '';
+		$sender_id = (isset($options['sender_id']) && !empty($options['sender_id'])) ? esc_attr($options['sender_id']) : '';
+
+		$woocommerce_reg_phone = (isset($options['woocommerce_reg_phone']) && !empty($options['woocommerce_reg_phone'])) ? 1 : 0;
+		$reg_allow_phone_wp = (isset($options['reg_allow_phone_wp']) && !empty($options['reg_allow_phone_wp'])) ? 1 : 0;
+
 
 		settings_fields($this->plugin_name);
 		do_settings_sections($this->plugin_name);
@@ -45,7 +44,7 @@ if (!defined('WPINC')) die;
 
         <!-- API Key -->
         <table class="form-table">
-            <tr valign="top">
+            <tr>
                 <th scope="row">
                     <label for="<?php echo $this->plugin_name; ?>-api_key">
 						<?php esc_attr_e('API Key', $this->plugin_name); ?>
@@ -57,7 +56,24 @@ if (!defined('WPINC')) die;
                             name="<?php echo $this->plugin_name; ?>[api_key]"
                             type="text" size="50"
                             value="<?php if (!empty($api_key)) echo $api_key;
-							else echo 'default'; ?>"
+							else echo 'Enter Your API Key'; ?>"
+                    />
+                </td>
+            </tr>
+
+            <tr>
+                <th scope="row">
+                    <label for="<?php echo $this->plugin_name; ?>-sender_id">
+				        <?php esc_attr_e('Sender ID', $this->plugin_name); ?>
+                    </label>
+                </th>
+                <td>
+                    <input
+                            id="<?php echo $this->plugin_name; ?>-sender_id"
+                            name="<?php echo $this->plugin_name; ?>[sender_id]"
+                            type="text" size="50"
+                            value="<?php if (!empty($sender_id)) echo $sender_id;
+					        else echo ''; ?>"
                     />
                 </td>
             </tr>
@@ -66,82 +82,35 @@ if (!defined('WPINC')) die;
         <hr>
 
 	    <?php if( is_plugin_active( 'woocommerce/woocommerce.php' )){ ?>
-            <h3><?php esc_attr_e('Customer Notifications', $this->plugin_name); ?></h3>
+            <h3><?php esc_attr_e('WordPress Verification', $this->plugin_name); ?></h3>
 
             <!-- Checkbox -->
             <fieldset>
 
-                <div class="form-group">
-                    <label for="<?php echo $this->plugin_name; ?>-order_pending_payment">
+                <div class="mb-2">
+                    <label for="<?php echo $this->plugin_name; ?>-woocommerce_reg_phone">
                         <input
                                 type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-order_pending_payment"
-                                name="<?php echo $this->plugin_name; ?>[order_pending_payment]"
+                                id="<?php echo $this->plugin_name; ?>-woocommerce_reg_phone"
+                                name="<?php echo $this->plugin_name; ?>[woocommerce_reg_phone]"
                                 value="1"
-						    <?php checked($order_pending_payment, 1); ?> />
-                        <span><?php esc_attr_e('When Order is Pending Payment', $this->plugin_name); ?></span>
+						    <?php checked($woocommerce_reg_phone, 1); ?> />
+                        <span><?php esc_attr_e('Allow phone number in woocommerce register / my account', $this->plugin_name); ?></span>
                     </label>
                 </div>
 
-                <div class="form-group">
-                    <label for="<?php echo $this->plugin_name; ?>-order_processing">
+                <div class="mb-2">
+                    <label for="<?php echo $this->plugin_name; ?>-reg_allow_phone_wp">
                         <input
                                 type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-order_processing"
-                                name="<?php echo $this->plugin_name; ?>[order_processing]"
+                                id="<?php echo $this->plugin_name; ?>-reg_allow_phone_wp"
+                                name="<?php echo $this->plugin_name; ?>[reg_allow_phone_wp]"
                                 value="1"
-						    <?php checked($order_processing, 1); ?> />
-                        <span><?php esc_attr_e('When Order is Pending Processing', $this->plugin_name); ?></span>
+						    <?php checked($reg_allow_phone_wp, 1); ?> />
+                        <span><?php esc_attr_e('Allow Phone in WordPress Registration Form', $this->plugin_name); ?></span>
                     </label>
                 </div>
 
-                <div class="form-group">
-                    <label for="<?php echo $this->plugin_name; ?>-order_on_hold">
-                        <input
-                                type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-order_on_hold"
-                                name="<?php echo $this->plugin_name; ?>[order_on_hold]"
-                                value="1"
-						    <?php checked($order_on_hold, 1); ?> />
-                        <span><?php esc_attr_e('When Order is On Hold', $this->plugin_name); ?></span>
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label for="<?php echo $this->plugin_name; ?>-order_completed">
-                        <input
-                                type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-order_completed"
-                                name="<?php echo $this->plugin_name; ?>[order_completed]"
-                                value="1"
-						    <?php checked($order_completed, 1); ?> />
-                        <span><?php esc_attr_e('When Order is Completed', $this->plugin_name); ?></span>
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label for="<?php echo $this->plugin_name; ?>-order_cancelled">
-                        <input
-                                type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-order_cancelled"
-                                name="<?php echo $this->plugin_name; ?>[order_cancelled]"
-                                value="1"
-						    <?php checked($order_cancelled, 1); ?> />
-                        <span><?php esc_attr_e('When Order is Cancelled', $this->plugin_name); ?></span>
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label for="<?php echo $this->plugin_name; ?>-order_refunded">
-                        <input
-                                type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-order_refunded"
-                                name="<?php echo $this->plugin_name; ?>[order_refunded]"
-                                value="1"
-						    <?php checked($order_refunded, 1); ?> />
-                        <span><?php esc_attr_e('When Order is Refunded', $this->plugin_name); ?></span>
-                    </label>
-                </div>
 
             </fieldset>
 

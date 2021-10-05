@@ -29,3 +29,6 @@
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
+
+// Delete All Options from this plugin alpha_sms
+delete_option($this->plugin_name);

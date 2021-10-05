@@ -57,6 +57,7 @@ class Alpha_sms
 	 * @var      string    $version    The current version of the plugin.
 	 */
 	protected $version;
+	private $options;
 
 	/**
 	 * Define the core functionality of the plugin.
@@ -75,6 +76,8 @@ class Alpha_sms
 			$this->version = '1.0.0';
 		}
 		$this->plugin_name = 'alpha_sms';
+
+		$this->options = get_option($this->plugin_name);
 
 		$this->load_dependencies();
 		$this->set_locale();
@@ -160,7 +163,7 @@ class Alpha_sms
 		$this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
 
 		// Add menu item
-		$this->loader->add_action('admin_menu', $plugin_admin, 'alpha_sms_admin_menu');
+		$this->loader->add_action('admin_menu', $plugin_admin, 'add_admin_menu');
 
 		// Add Settings link to the plugin
 		$plugin_basename = plugin_basename(plugin_dir_path(__DIR__) . $this->plugin_name . '.php');
@@ -173,7 +176,6 @@ class Alpha_sms
 		$this->loader->add_action('admin_post_'. $this->plugin_name.'_campaign', $plugin_admin, 'alpha_sms_send_campaign');
 
 		$this->loader->add_action( 'admin_notices', $plugin_admin, 'display_flash_notices');
-
 
 	}
 
@@ -191,6 +193,35 @@ class Alpha_sms
 
 		$this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
 		$this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
+
+
+		// Woocommerce Reg/Account Phone field
+		if ($this->options['woocommerce_reg_phone']){
+			// Display a field in Registration Form / Edit account
+			$this->loader->add_action('woocommerce_register_form_start', $plugin_public, 'wc_phone_on_reg');
+			$this->loader->add_action('woocommerce_edit_account_form_start', $plugin_public, 'wc_phone_on_reg');
+			// registration Field validation
+			$this->loader->add_filter( 'woocommerce_registration_errors', $plugin_public,'wc_registration_field_validation' );
+			// Save registration Field value
+			$this->loader->add_action( 'woocommerce_created_customer', $plugin_public, 'wc_save_account_registration_field' );
+			// Save Field value in Edit account
+			$this->loader->add_action('woocommerce_save_account_details', $plugin_public, 'wc_save_my_account_billing_phone');
+		}
+
+		// Phone field on WordPress Reg page
+		if ($this->options['reg_allow_phone_wp']){
+			// Display a field in Registration Form
+			$this->loader->add_action('register_form', $plugin_public, 'wp_phone_on_register');
+			// Add validation. In this case, we make sure phone is required.
+			$this->loader->add_filter( 'registration_errors', $plugin_public,'wp_phone_field_validation', 10, 3 );
+			// otp transaction challenge
+			$this->loader->add_action($this->plugin_name.'_generate_otp', $plugin_public, 'otp_challenge', 10, 4);
+			$this->loader->add_action('wp_ajax_nopriv_wp_otp_action', $plugin_public, 'process_otp_action');
+
+			// Finally, save our extra registration user meta.
+			$this->loader->add_action( 'user_register', $plugin_public, 'wp_user_register' );
+
+		}
 	}
 
 	/**

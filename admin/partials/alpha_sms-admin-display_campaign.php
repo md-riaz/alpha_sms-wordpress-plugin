@@ -33,7 +33,7 @@ if (!defined('WPINC')) die;
                 <span><?php esc_attr_e( 'Enter Phone Numbers', $this->plugin_name ); ?></span>
             </legend>
             <textarea class="d-block" id="<?php echo $this->plugin_name; ?>-numbers"
-                      name="<?php echo $this->plugin_name; ?>[numbers]" rows="2" cols="50"></textarea>
+                      name="<?php echo $this->plugin_name; ?>[numbers]" rows="2" cols="70"></textarea>
             <small>New Line Separated</small>
         </fieldset>
 
@@ -55,7 +55,7 @@ if (!defined('WPINC')) die;
                 <span><?php esc_attr_e( ' Enter SMS Content', $this->plugin_name ); ?></span>
             </legend>
             <textarea class="d-block" id="<?php echo $this->plugin_name; ?>-body"
-                      name="<?php echo $this->plugin_name; ?>[body]" rows="4" cols="50"></textarea>
+                      name="<?php echo $this->plugin_name; ?>[body]" rows="8" cols="70" required></textarea>
 
         </fieldset>
 
