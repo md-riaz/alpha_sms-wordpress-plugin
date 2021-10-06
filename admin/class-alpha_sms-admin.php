@@ -177,16 +177,23 @@ class Alpha_sms_Admin {
 	{
 		$options = get_option($this->plugin_name);
 
+		if (strpos(esc_attr($input['api_key']), str_repeat('*', 24), '12')){
+			$input['api_key'] = $options['api_key'];
+		}
+
 		$options['api_key'] = (isset($input['api_key']) && !empty($input['api_key'])) ? esc_attr($input['api_key']) : '';
 		$options['sender_id'] = (isset($input['sender_id']) && !empty($input['sender_id'])) ? esc_attr($input['sender_id']) : '';
 
-		$options['woocommerce_reg_phone'] = (isset($input['woocommerce_reg_phone']) && !empty($input['woocommerce_reg_phone'])) ? 1 : 0;
-		$options['reg_allow_phone_wp'] = (isset($input['reg_allow_phone_wp']) && !empty($input['reg_allow_phone_wp'])) ? 1 : 0;
-		$options['login_phone'] = (isset($input['login_phone']) && !empty($input['login_phone'])) ? 1 : 0;
+		$options['order_status'] = (isset($input['order_status']) && !empty($input['order_status'])) ? 1 : 0;
+		$options['login_otp'] = (isset($input['login_otp']) && !empty($input['login_otp'])) ? 1 : 0;
+		$options['reg_otp'] = (isset($input['reg_otp']) && !empty($input['reg_otp'])) ? 1 : 0;
 
 		return $options;
 	}
 
+	/**
+	 * update all settings
+	 */
 	public function options_update()
 	{
 		register_setting($this->plugin_name, $this->plugin_name, [
@@ -194,6 +201,9 @@ class Alpha_sms_Admin {
 		]);
 	}
 
+	/**
+	 * send campaign msg to users
+	 */
 	public function alpha_sms_send_campaign()
 	{
 		$numbersArr = [];

@@ -30,17 +30,15 @@ if (!defined('WPINC')) die;
 		//Grab all options
 		$options = get_option($this->plugin_name);
 
-		$api_key = (isset($options['api_key']) && !empty($options['api_key'])) ? esc_attr($options['api_key']) : '';
+		$api_key = (isset($options['api_key']) && !empty($options['api_key'])) ? substr_replace(esc_attr($options['api_key']), str_repeat('*', 24), 12, 16) : '';
 		$sender_id = (isset($options['sender_id']) && !empty($options['sender_id'])) ? esc_attr($options['sender_id']) : '';
 
-		$woocommerce_reg_phone = (isset($options['woocommerce_reg_phone']) && !empty($options['woocommerce_reg_phone'])) ? 1 : 0;
-		$reg_allow_phone_wp = (isset($options['reg_allow_phone_wp']) && !empty($options['reg_allow_phone_wp'])) ? 1 : 0;
-		$login_phone = (isset($options['login_phone']) && !empty($options['login_phone'])) ? 1 : 0;
-
+		$order_status = (isset($options['order_status']) && !empty($options['order_status'])) ? 1 : 0;
+		$login_otp = (isset($options['login_otp']) && !empty($options['login_otp'])) ? 1 : 0;
+		$reg_otp = (isset($options['reg_otp']) && !empty($options['reg_otp'])) ? 1 : 0;
 
 		settings_fields($this->plugin_name);
 		do_settings_sections($this->plugin_name);
-
 		?>
 
         <!-- API Key -->
@@ -65,7 +63,7 @@ if (!defined('WPINC')) die;
             <tr>
                 <th scope="row">
                     <label for="<?php echo $this->plugin_name; ?>-sender_id">
-				        <?php esc_attr_e('Sender ID', $this->plugin_name); ?>
+						<?php esc_attr_e('Sender ID', $this->plugin_name); ?>
                     </label>
                 </th>
                 <td>
@@ -74,7 +72,7 @@ if (!defined('WPINC')) die;
                             name="<?php echo $this->plugin_name; ?>[sender_id]"
                             type="text" size="50"
                             value="<?php if (!empty($sender_id)) echo $sender_id;
-					        else echo ''; ?>"
+							else echo ''; ?>"
                     />
                 </td>
             </tr>
@@ -82,54 +80,49 @@ if (!defined('WPINC')) die;
 
         <hr>
 
-	    <?php if( is_plugin_active( 'woocommerce/woocommerce.php' )){ ?>
-            <h3><?php esc_attr_e('WordPress Verification', $this->plugin_name); ?></h3>
+        <h3><?php esc_attr_e('SMS Events', $this->plugin_name); ?></h3>
 
-            <!-- Checkbox -->
-            <fieldset>
+        <ol class="switches">
+            <li>
+                <input
+                        type="checkbox"
+                        id="<?php echo $this->plugin_name; ?>-order_status"
+                        name="<?php echo $this->plugin_name; ?>[order_status]"
+					<?php checked($order_status, 1); ?>
+                />
+                <label for="<?php echo $this->plugin_name; ?>-order_status">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('Notify on Order Status Change', $this->plugin_name); ?></span>
+                </label>
+            </li>
 
-                <div class="mb-2">
-                    <label for="<?php echo $this->plugin_name; ?>-woocommerce_reg_phone">
-                        <input
-                                type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-woocommerce_reg_phone"
-                                name="<?php echo $this->plugin_name; ?>[woocommerce_reg_phone]"
-                                value="1"
-						    <?php checked($woocommerce_reg_phone, 1); ?> />
-                        <span><?php esc_attr_e('Allow phone number in woocommerce register / my account', $this->plugin_name); ?></span>
-                    </label>
-                </div>
+            <li>
+                <input
+                        type="checkbox"
+                        id="<?php echo $this->plugin_name; ?>-login_otp"
+                        name="<?php echo $this->plugin_name; ?>[login_otp]"
+					<?php checked($login_otp, 1); ?>
+                />
+                <label for="<?php echo $this->plugin_name; ?>-login_otp">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('Login with OTP', $this->plugin_name); ?></span>
+                </label>
+            </li>
 
-                <div class="mb-2">
-                    <label for="<?php echo $this->plugin_name; ?>-reg_allow_phone_wp">
-                        <input
-                                type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-reg_allow_phone_wp"
-                                name="<?php echo $this->plugin_name; ?>[reg_allow_phone_wp]"
-                                value="1"
-						    <?php checked($reg_allow_phone_wp, 1); ?> />
-                        <span><?php esc_attr_e('Allow Phone in WordPress Registration Form', $this->plugin_name); ?></span>
-                    </label>
-                </div>
+            <li>
+                <input
+                        type="checkbox"
+                        id="<?php echo $this->plugin_name; ?>-reg_otp"
+                        name="<?php echo $this->plugin_name; ?>[reg_otp]"
+					<?php checked($reg_otp, 1); ?>
+                />
+                <label for="<?php echo $this->plugin_name; ?>-reg_otp">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('OTP for Registration', $this->plugin_name); ?></span>
+                </label>
+            </li>
 
-                <div class="mb-2">
-                    <label for="<?php echo $this->plugin_name; ?>-login_phone">
-                        <input
-                                type="checkbox"
-                                id="<?php echo $this->plugin_name; ?>-login_phone"
-                                name="<?php echo $this->plugin_name; ?>[login_phone]"
-                                value="1"
-						    <?php checked($login_phone, 1); ?> />
-                        <span><?php esc_attr_e('Login with mobile', $this->plugin_name); ?></span>
-                    </label>
-                </div>
-
-
-            </fieldset>
-
-	    <?php } else { ?>
-            <h4><?php esc_attr_e('Enable woocommerce for additional settings', $this->plugin_name); ?></h4>
-	    <?php } ?>
+        </ol>
 
 		<?php submit_button(__('Save all changes', $this->plugin_name), 'primary', 'submit', true); ?>
     </form>

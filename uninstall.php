@@ -32,3 +32,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 // Delete All Options from this plugin alpha_sms
 delete_option($this->plugin_name);
+
+// drop a custom database table
+global $wpdb;
+$wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}alpha_sms_login_register_actions");

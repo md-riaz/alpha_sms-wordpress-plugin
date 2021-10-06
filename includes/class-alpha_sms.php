@@ -196,7 +196,7 @@ class Alpha_sms
 
 
 		// Woocommerce Reg/Account Phone field
-		if ($this->options['woocommerce_reg_phone']){
+		if (isset($this->options['woocommerce_reg_phone'])){
 			// Display a field in Registration Form / Edit account
 			$this->loader->add_action('woocommerce_register_form_start', $plugin_public, 'wc_phone_on_reg');
 			$this->loader->add_action('woocommerce_edit_account_form_start', $plugin_public, 'wc_phone_on_reg');
@@ -209,7 +209,7 @@ class Alpha_sms
 		}
 
 		// Phone field on WordPress Reg page
-		if ($this->options['reg_allow_phone_wp']){
+		if ($this->options['reg_otp']){
 			// Display a field in Registration Form
 			$this->loader->add_action('register_form', $plugin_public, 'wp_phone_on_register');
 			// Add validation. In this case, we make sure phone is required.
@@ -227,7 +227,7 @@ class Alpha_sms
 
 
 		// Login with phone number
-		if ($this->options['login_phone']){
+		if ($this->options['login_otp']){
 			// load css and js to login page
 			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_styles');
 			// add otp form to login page
@@ -235,6 +235,9 @@ class Alpha_sms
 			// phone number submit action from jQuery $.post
 			$this->loader->add_action('wp_ajax_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
 			$this->loader->add_action('wp_ajax_nopriv_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
+
+			// login user based on otp
+			$this->loader->add_action('authenticate', $plugin_public,'login_user', 10, 3);
 		}
 	}
 

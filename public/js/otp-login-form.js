@@ -1,10 +1,7 @@
 window.$ = jQuery;
 
-
-let otp_send_btn = $('#alpha_sms-generate-otp-btn');
-
 $(function () {
-    localStorage['login_stage'] = 'initial';
+
     let session_login_type = $('#session-login-type').val();
     let value;
 
@@ -16,14 +13,28 @@ $(function () {
 
     $("input[name='login_type'][value=" + value + "]").prop('checked', true);
 
-    otp_send_btn.on('click', saveAndSendOtp);
+    $('#alpha_sms-generate-otp-btn').on('click', saveAndSendOtp);
+    actionLoginTypeValue();
 });
 
+// toggle between username/password field and phone otp field
+function actionLoginTypeValue() {
+    let radioValue = $("input[name='login_type']:checked").val();
+
+    if (radioValue === 'otp') {
+        $('form#loginform > p:first-child, form#loginform > .user-pass-wrap').hide();
+        $('#alpha_sms-otp').show();
+
+    } else if (radioValue === 'username_password') {
+        $('form#loginform > p:first-child, form#loginform > .user-pass-wrap').show();
+        $('#alpha_sms-otp').hide();
+
+    }
+}
+
 function saveAndSendOtp() {
-
-    otp_send_btn.prop('disabled', true);
-
-    localStorage['login_stage'] = "initial";
+    $('#otp_alert').html('');
+    $('#alpha_sms-generate-otp-btn').prop('disabled', true);
 
     const mobile_phone = $('#alpha_sms-mobile_phone').val();
     const ajaxurl = $('#ajax-url').val();
@@ -36,9 +47,19 @@ function saveAndSendOtp() {
     };
 
     $.post(ajaxurl, data, function (response) {
-        if (response['status'] == '200'){
 
+        if (response['status'] === '200') {
+            //button of Send
+            $('#alpha_sms-generate-otp-btn').prop('value', 'Re-Send');
+
+            $('#otp_alert').html("<p>"+response['message']+"</p>").css('color', '#3c763d');
+            $('.alpha_sms-generate-otp label, .alpha_sms-generate-otp #otp_code').slideDown();
+
+        }  else {
+            $('#otp_alert').html("<p>"+response['message']+"</p>").css('color', '#a94442');
         }
+
+        $('#alpha_sms-generate-otp-btn').prop('disabled', false)
     }, 'json')
 
 }

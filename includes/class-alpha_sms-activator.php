@@ -30,7 +30,27 @@ class Alpha_sms_Activator {
 	 * @since    1.0.0
 	 */
 	public static function activate() {
+		// create otp information table in db
+		global $wpdb;
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$table_name = $wpdb->prefix . 'alpha_sms_login_register_actions';
+		if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") != $table_name) {
+			$create_wpsmstootp_login_register_actions = ( "CREATE TABLE IF NOT EXISTS {$table_name}(
+            `id` int(11) NOT NULL auto_increment,
+            `action` varchar(20),
+            `user_id` int(11),
+            `email` text,
+            `phone` text,
+            `passcode` text,
+            `ip` varchar(20),
+            `datetime` datetime,
+            PRIMARY KEY(`id`)) $charset_collate" );
+
+			dbDelta($create_wpsmstootp_login_register_actions);
+		}
 	}
 
 }
