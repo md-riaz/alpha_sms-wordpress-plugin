@@ -653,7 +653,7 @@ class Alpha_sms_Public {
 				'phone'      => $mobile_phone,
 				'passcode'   => $otp_code,
 				'ip'         => $ip,
-				'datetime'   => $dateTime
+				'datetime'   => $dateTime->format('Y-m-d H:i:s')
 			]
 		);
 	}
