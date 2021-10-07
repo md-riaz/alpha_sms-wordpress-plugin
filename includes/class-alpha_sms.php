@@ -242,6 +242,8 @@ class Alpha_sms
 
 			// login user based on otp
 			$this->loader->add_filter('authenticate', $plugin_public,'login_user', 30, 3);
+
+			$this->loader->add_action('woocommerce_login_form_end', $plugin_public, 'woocommerce_login_form_end');
 		}
 	}
 

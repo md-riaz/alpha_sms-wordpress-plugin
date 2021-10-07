@@ -469,6 +469,14 @@ class Alpha_sms_Public {
 	}
 
 
+	public function woocommerce_login_form_end()
+	{
+        return;
+    }
+
+
+
+
 	/**
 	 * WordPress login with Phone Number methods
 	 *
