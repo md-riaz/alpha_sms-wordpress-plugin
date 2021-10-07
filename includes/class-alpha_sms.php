@@ -224,9 +224,13 @@ class Alpha_sms
 
 		}
 
+		// Woocommerce order status notifications
+		if ($this->options['order_status']){
+			$this->loader->add_action('woocommerce_order_status_changed', $plugin_public, 'woo_order_status_change', 10, 3);
+			$this->loader->add_action('woocommerce_new_order', $plugin_public, 'woo_new_order');
+		}
 
-
-		// Login with phone number
+		// Phone number otp verification on login
 		if ($this->options['login_otp']){
 			// load css and js to login page
 			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_styles');
@@ -237,7 +241,7 @@ class Alpha_sms
 			$this->loader->add_action('wp_ajax_nopriv_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
 
 			// login user based on otp
-			$this->loader->add_action('authenticate', $plugin_public,'login_user', 10, 3);
+			$this->loader->add_filter('authenticate', $plugin_public,'login_user', 30, 3);
 		}
 	}
 

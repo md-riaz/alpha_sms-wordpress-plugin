@@ -5,16 +5,13 @@
 .float-none {
     float: none !important;
 }
-#login {
-    width: 400px;
+
+.float-right {
+    float: right !important;
 }
 
 .d-flex{
     display: flex !important;
-}
-
-.login label + label {
-    margin-left: 10px;
 }
 
 .my-3 {
@@ -30,19 +27,6 @@
     margin-bottom: 0 !important;
 }
 
-.form-text {
-    margin-top: 14px;
-    font-size: .875em;
-    color: #6c757d;
-}
-
-#alpha_sms-generate-otp-btn {
-    padding: 4px 12px;
-}
-
-#alpha_sms-otp label {
-    width: 100%;
-}
 #alpha_sms-otp label > input {
     font-size: 1.2rem;
 }
@@ -52,10 +36,4 @@
     width: 100%;
     padding: 6px 12px;
     margin-top: 1rem;
-}
-
-#otp_alert p {
-    font-size: 1rem;
-    margin-bottom: 1rem !important;
-    font-weight: 500;
 }

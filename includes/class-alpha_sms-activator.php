@@ -42,9 +42,10 @@ class Alpha_sms_Activator {
             `id` int(11) NOT NULL auto_increment,
             `action` varchar(20),
             `user_id` int(11),
-            `email` text,
-            `phone` text,
-            `passcode` text,
+            `user_login` varchar(20),
+            `user_email` varchar(30),
+            `phone` varchar(20),
+            `passcode` varchar(20),
             `ip` varchar(20),
             `datetime` datetime,
             PRIMARY KEY(`id`)) $charset_collate" );

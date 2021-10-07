@@ -38,10 +38,8 @@ if ( ! defined( 'WPINC' ) ) {
 define( 'ALPHA_SMS_VERSION', '1.0.0' );
 
 // plugin constants
-//Set TimeZone
-date_default_timezone_set('Asia/Dhaka');
-
-define("TIMESTAMP", date("Y-m-d H:i:s"));
+$date = new DateTime("now", new DateTimeZone('Asia/Dhaka') );
+define("TIMESTAMP", $date->format('Y-m-d H:i:s'));
 
 /**
  * The code that runs during plugin activation.
