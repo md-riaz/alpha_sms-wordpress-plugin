@@ -40,14 +40,14 @@ class Alpha_sms_Activator {
 		if ($wpdb->get_var("SHOW TABLES LIKE '{$table_name}'") != $table_name) {
 			$create_wpsmstootp_login_register_actions = ( "CREATE TABLE IF NOT EXISTS {$table_name}(
             `id` int(11) NOT NULL auto_increment,
-            `action` varchar(20),
+            `action` varchar(20) NOT NULL,
             `user_id` int(11),
             `user_login` varchar(20),
             `user_email` varchar(30),
-            `phone` varchar(20),
-            `passcode` varchar(20),
-            `ip` varchar(20),
-            `datetime` datetime,
+            `phone` varchar(20)  NOT NULL,
+            `passcode` varchar(20)  NOT NULL,
+            `ip` varchar(20)  NOT NULL,
+            `datetime` datetime  NOT NULL,
             PRIMARY KEY(`id`)) $charset_collate" );
 
 			dbDelta($create_wpsmstootp_login_register_actions);

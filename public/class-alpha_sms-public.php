@@ -111,13 +111,20 @@ class Alpha_sms_Public {
 
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/alpha_sms-public.js', ['jquery'], $this->version, false);
 
+		// adding a js variable for ajax form submit url
+		wp_localize_script(
+			$this->plugin_name,
+			$this->plugin_name . '_object',
+			['ajaxurl' => admin_url('admin-ajax.php')]
+		);
+
 	}
 
 	/**
-	 * Woocommerce show phone number on register page and my account
+	 * Woocommerce
+	 * show phone number on register page and my account
 	 */
-
-	public function wc_phone_on_reg()
+	public function wc_phone_on_register()
 	{
 		$user = wp_get_current_user();
 		$value = isset($_POST['billing_phone']) ? esc_attr($_POST['billing_phone']) : $user->billing_phone;
@@ -127,73 +134,91 @@ class Alpha_sms_Public {
             <label for="reg_billing_phone"><?php _e('Phone', 'woocommerce'); ?> <span class="required">*</span>
             </label>
             <input type="tel" minlength="11" maxlength="11" class="input-text" name="billing_phone"
-                   id="reg_billing_phone" value="<?php echo $value ?>"/>
+                   id="reg_billing_phone" value="<?php echo $value ?>" required/>
         </p>
         <div class="clear"></div>
 
 		<?php
 	}
 
-	public function wc_registration_field_validation($errors)
-	{
-		if (isset($_POST['billing_phone']) && empty($_POST['billing_phone'])) {
-			$errors->add('billing_phone_error', __('<strong>Error</strong>: account number is required!', 'woocommerce'));
-		}
-
-		return $errors;
-	}
-
-	public function wc_save_account_registration_field($customer_id)
-	{
-		if (isset($_POST['billing_phone'])) {
-			update_user_meta($customer_id, 'billing_phone', sanitize_text_field($_POST['billing_phone']));
-		}
-	}
-
-	public function wc_save_my_account_billing_phone($user_id)
-	{
-		if (isset($_POST['billing_phone'])) {
-			update_user_meta($user_id, 'billing_phone', sanitize_text_field($_POST['billing_phone']));
-		}
-	}
-
 	/**
-	 * Phone field on WordPress Reg page
+	 * Woocommerce / Default WordPress
+	 * show otp form in registration form
 	 */
-	public function wp_phone_on_register()
+	public function add_otp_field_on_reg_form()
 	{
-		$billing_phone = (!empty($_POST['billing_phone'])) ? sanitize_text_field($_POST['billing_phone']) : '';
-
 		?>
-        <p>
-            <label for="billing_phone"><?php _e('Phone', $this->plugin_name) ?><br/>
-                <input type="text" name="billing_phone" id="billing_phone" class="input"
-                       value="<?php echo esc_attr($billing_phone); ?>" size="25"/></label>
-        </p>
+        <div id="alpha_sms_otp_reg" class="mb-3" style="display:none;">
+            <div class="alpha_sms-generate-otp">
+                <label for="otp_code" class="d-inline-block">OTP Code</label>
+                <div id="wc_resend_otp" class="float-right"></div>
+                <input type="number" class="input" id="otp_code" name="otp_code"/>
+            </div>
+        </div>
+
 		<?php
 	}
 
 	/**
-	 * @param $errors
-	 * @param $sanitized_user_login
-	 * @param $user_email
-	 * @return mixed
+	 * Woocommerce + Default WordPress
+	 * ajax otp send on post phone number *
 	 */
-	public function wp_phone_field_validation($errors, $sanitized_user_login, $user_email)
+	public function send_otp_for_reg()
 	{
-		if (empty($_POST['billing_phone']) || !is_numeric($_POST['billing_phone']) || !$this->validateNumber(sanitize_text_field($_POST['billing_phone']))) {
-			$errors->add('phone_error', sprintf('<strong>%s</strong>: %s', __('ERROR', $this->plugin_name), __('You phone number is not valid.', $this->plugin_name)));
+		$user_phone = $user_email = '';
+
+		if (isset($_POST['billing_phone'], $_POST['email'])) {
+			$user_phone = $this->validateNumber(sanitize_text_field($_POST['billing_phone']));
+			$user_email = sanitize_text_field($_POST['email']);
 		}
 
-		$billing_phone = sanitize_text_field($_POST['billing_phone']);
+        if (!$user_email && !empty($_POST['billing_email'])){
+	        $user_email = sanitize_text_field($_POST['billing_email']);
+        }
 
-		if ($this->check_duplicate_billing_phone($billing_phone)) {
-			$errors->add('duplicate_phone_error', sprintf('<strong>%s</strong>: %s', __('ERROR', $this->plugin_name), __('This mobile_phone is already registered, please choose another one.', $this->plugin_name)));
+		if (!filter_var($user_email, FILTER_VALIDATE_EMAIL)) {
+			$response = ['status' => 400, 'message' => __('The email address you entered is not valid!')];
+			echo wp_kses_post(json_encode($response));
+			wp_die();
+			exit;
 		}
 
-		if (!empty($errors->errors)) return $errors;
+		if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
+			$response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.')];
+			echo wp_kses_post(json_encode($response));
+			wp_die();
+			exit;
+		}
 
-		return $this->startOTPTransaction($errors, $sanitized_user_login, $user_email, $billing_phone);
+		if (!$user_phone) {
+			$response = ['status' => 400, 'message' => __('The phone number you entered is not valid!')];
+			echo wp_kses_post(json_encode($response));
+			wp_die();
+			exit;
+		}
+
+		$ip = $this->getClientIP();
+		$action = 'Registration';
+
+		//we will send sms
+		$otp_code = $this->generateOTP();
+
+		$body = 'Your OTP for Registration is ' . $otp_code . ' . It is valid for 2 minutes.';
+
+		$sms_response = $this->SendSMS($user_phone, $body);
+
+		if ($sms_response->error === 0) {
+			// save info in database for later verification
+			$this->log_login_register_action(null, null, sanitize_text_field($_POST['email']), $user_phone, $otp_code, $ip, $action);
+			$response = ['status' => 200, 'message' => 'Please enter the verification code sent to your phone.'];
+			echo wp_kses_post(json_encode($response));
+			exit;
+		}
+
+		$response = ['status' => '400', 'message' => $sms_response->msg];
+		echo wp_kses_post(json_encode($response));
+		exit;
+		wp_die();
 	}
 
 	/**
@@ -219,162 +244,247 @@ class Alpha_sms_Public {
 	}
 
 	/**
-	 * check duplicate phone number in database
-	 * @param $phone_number
+	 * Get client IP Address
+	 * @return mixed|string
 	 */
-	public function check_duplicate_billing_phone($phone_number)
+	public function getClientIP()
 	{
-		global $wpdb;
-		$result = $wpdb->get_results("SELECT * from `{$wpdb->prefix}usermeta` WHERE meta_key = 'mobile_phone' AND REPLACE(meta_value, ' ', '') = '{$phone_number}'");
+		$ipaddress = '';
+		if (isset($_SERVER['HTTP_CLIENT_IP']))
+			$ipaddress = $_SERVER['HTTP_CLIENT_IP'];
+		else if (isset($_SERVER['HTTP_X_FORWARDED_FOR']))
+			$ipaddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
+		else if (isset($_SERVER['HTTP_X_FORWARDED']))
+			$ipaddress = $_SERVER['HTTP_X_FORWARDED'];
+		else if (isset($_SERVER['HTTP_FORWARDED_FOR']))
+			$ipaddress = $_SERVER['HTTP_FORWARDED_FOR'];
+		else if (isset($_SERVER['HTTP_FORWARDED']))
+			$ipaddress = $_SERVER['HTTP_FORWARDED'];
+		else if (isset($_SERVER['REMOTE_ADDR']))
+			$ipaddress = $_SERVER['REMOTE_ADDR'];
+		else
+			$ipaddress = 'UNKNOWN';
 
-		if ($result) return true;
-
-		return false;
+		return $ipaddress;
 	}
 
 	/**
+	 * Generate 6 digit otp code
+	 * @return string
+	 */
+	public function generateOTP()
+	{
+		$otp = '';
+
+		for ($i = 0; $i < 6; $i++) {
+			$otp .= mt_rand(0, 9);
+		}
+
+		return $otp;
+	}
+
+	/**
+	 * Send SMS via sms api
+	 *
+	 * @param $to
+	 * @param $body
+	 * @return false|mixed
+	 */
+	public function SendSMS($to, $body)
+	{
+		$api_key = !empty($this->options['api_key']) ? $this->options['api_key'] : '';
+		$sender_id = !empty($this->options['sender_id']) ? trim($this->options['sender_id']) : '';
+
+		require_once plugin_dir_path(__DIR__) . 'includes/sms.class.php';
+
+		$sms = new AlphaSMS($api_key);
+		$sms->numbers = $to;
+		$sms->body = $body;
+		$sms->sender_id = $sender_id;
+
+		return $sms->Send();
+	}
+
+	/**
+	 * after sending otp to user, log the otp and data in db
+	 *
+	 * @param $user_id
+	 * @param $user_login
+	 * @param $user_email
+	 * @param $mobile_phone
+	 * @param $otp_code
+	 * @param $ip
+	 * @param $action
+	 * @return mixed
+	 */
+	public function log_login_register_action($user_id, $user_login, $user_email, $mobile_phone, $otp_code, $ip, $action)
+	{
+		global $wpdb;
+
+		$dateTime = new DateTime(TIMESTAMP);
+		$dateTime->modify('+2 minutes');
+
+		return $wpdb->insert(
+			$wpdb->prefix . "alpha_sms_login_register_actions",
+			[
+				'action'     => $action,
+				'user_id'    => $user_id,
+				'user_login' => $user_login,
+				'user_email' => $user_email,
+				'phone'      => $mobile_phone,
+				'passcode'   => $otp_code,
+				'ip'         => $ip,
+				'datetime'   => $dateTime->format('Y-m-d H:i:s')
+			]
+		);
+	}
+
+	/**
+	 * Verify otp and register the user
+	 * @param $customer_id
+	 */
+	public function register_the_customer($customer_id)
+	{
+		if (isset($_POST['billing_phone'])) {
+			update_user_meta($customer_id, 'billing_phone', sanitize_text_field($this->validateNumber($_POST['billing_phone'])));
+		}
+	}
+
+	/**
+	 * Default WordPress
+	 * show phone number on register page
+	 */
+	public function wp_phone_on_register()
+	{
+		$billing_phone = (!empty($_POST['billing_phone'])) ? sanitize_text_field($_POST['billing_phone']) : '';
+
+		?>
+        <p>
+            <label for="billing_phone"><?php _e('Phone', $this->plugin_name) ?><br/>
+                <input type="text" name="billing_phone" id="reg_billing_phone" class="input"
+                       value="<?php echo esc_attr($billing_phone); ?>" size="25"/></label>
+        </p>
+		<?php
+	}
+
+	/**
+	 * Woocommerce phone field validation
 	 * @param $errors
 	 * @param $sanitized_user_login
 	 * @param $user_email
-	 * @param $billing_phone
 	 * @return mixed
 	 */
-	public function startOTPTransaction($errors, $sanitized_user_login, $user_email, $billing_phone)
+	public function wp_register_form_validation($errors, $sanitized_user_login, $user_email)
 	{
-		if (!isset($_POST['register_nonce'])) return $errors;
+		return $this->wc_register_form_validation($errors);
+	}
 
-		$_SESSION['otp_session'] = 'default_wp_registration';
+	/**
+	 * Woocommerce validate phone and validate otp
+	 * @param $errors
+	 * @return mixed
+	 */
+	public function wc_register_form_validation($errors)
+	{
+		global $wpdb;
+		if (empty($_REQUEST['billing_phone']) || !is_numeric($_REQUEST['billing_phone']) || !$this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']))) {
+			$errors->add('phone_error', __('You phone number is not valid.', $this->plugin_name));
+		}
 
-		$this->sendChallenge($errors, $sanitized_user_login, $user_email, $billing_phone);
+		$billing_phone = sanitize_text_field($_REQUEST['billing_phone']);
+
+		$hasPhoneNumber = get_users('meta_value=' . $billing_phone);
+
+		if (!empty($hasPhoneNumber)) {
+			$errors->add('duplicate_phone_error', __('Mobile number is already used!', $this->plugin_name));
+		}
+
+		if (!empty($_REQUEST['otp_code'])) {
+
+			$otp_code = $wpdb->_escape($_REQUEST['otp_code']);
+
+			$email = !empty($_REQUEST['email']) ? $_REQUEST['email'] : $_REQUEST['user_email'];
+
+			$email = sanitize_email($email);
+			$action = 'Registration';
+
+			$valid_user = $this->authenticate_otp($email, $action, trim($otp_code));
+
+			if ($valid_user) {
+				$this->deletePastdata($email, $email, $action);
+
+				return $errors;
+			}
+		}
+
+
+		// otp validation failed or no otp provided
+		$errors->add('otp_error', __('Invalid OTP entered!', $this->plugin_name));
 
 		return $errors;
 	}
 
 	/**
-	 * @param $errors
-	 * @param $user_login
-	 * @param $user_email
-	 * @param $billing_phone
-	 */
-	public function sendChallenge($errors, $user_login, $user_email, $billing_phone)
-	{
-		do_action($this->plugin_name . '_generate_otp', $errors, $user_login, $user_email, $billing_phone);
-	}
-
-	/**
-	 * @param $user_id
-	 */
-	public function wp_user_register($user_id)
-	{
-		if (!empty($_POST['billing_phone'])) {
-			update_user_meta($user_id, 'billing_phone', sanitize_text_field($_POST['billing_phone']));
-		}
-	}
-
-	/**
-	 * @param $errors
-	 * @param $user_login
-	 * @param $user_email
-	 * @param $billing_phone
-	 * @param string $password
-	 */
-	public function otp_challenge($errors, $user_login, $user_email, $billing_phone, $password = '')
-	{
-
-		$_SESSION['current_url'] = $this->currentPageUrl();
-		$_SESSION['user_login'] = $user_login;
-		$_SESSION['user_email'] = $user_email;
-		$_SESSION['user_password'] = $password;
-		$_SESSION['billing_phone'] = $billing_phone;
-
-		$this->handleOTPAction($user_login, $user_email, $billing_phone);
-	}
-
-	/**
-	 * @return mixed
-	 */
-	public function currentPageUrl()
-	{
-		global $wp;
-
-		return add_query_arg($wp->query_vars, home_url($wp->request));
-	}
-
-	/**
-	 * @param $user_login
-	 * @param $user_email
-	 * @param $billing_phone
-	 */
-	public function handleOTPAction($user_login, $user_email, $billing_phone)
-	{
-
-		$otp_template = 'An OTP Code has been sent to ##phone##';
-		$message = str_replace("##phone##", $billing_phone, $otp_template);
-
-		if (!headers_sent()) header('Content-Type: text/html; charset=utf-8');
-
-		$htmlContent = "
-                <div class='otp-container'>
-                    <h1>ENTER OTP</h1>
-                    <p>{$message}</p>
-                    <form action='" . admin_url('admin-ajax.php') . "' method='post' id='otp_form'>
-                    " . wp_nonce_field('wp_otp_action', $this->plugin_name) . "
-                    <input name='action' value='wp_otp_action' type='hidden'>
-                        <div class='userInput'/>
-                            <input type='number' id='otp_code' required autofocus />
-                        </div>
-                        <button type='submit'>CONFIRM</button>
-                    </form>
-                    <script>(function($){
-                        $('#site-header').remove()
-                        })(jQuery);
-                    </script>
-                </div>
-";
-
-		echo get_header() . $htmlContent;
-		exit();
-	}
-
-	/**
+	 * Select otp from db and compare
 	 *
+	 * @param $username
+	 * @param $action
+	 * @param $otp_code
+	 * @return bool
 	 */
-	public function process_otp_action()
+	public function authenticate_otp($username, $action, $otp_code)
 	{
-		if (empty($_POST) || !wp_verify_nonce($_POST[$this->plugin_name], 'wp_otp_action')) {
-			echo 'You targeted the right function, but sorry, your nonce did not verify.';
-			die();
-		}
+		global $wpdb;
+		$ip = $this->getClientIP();
 
-		// do your function here
-		echo json_encode(['status' => '200']);
+		$passcode = $wpdb->get_var("SELECT passcode FROM `{$wpdb->prefix}alpha_sms_login_register_actions` WHERE `action` = '$action' AND (`user_login` = '$username' OR `user_email` = '$username') AND `ip` = '$ip' AND `datetime` > '" . TIMESTAMP . "' ORDER BY id DESC LIMIT 1");
+
+		// check otp is correct or not
+		return (!empty($passcode) && $otp_code === $passcode);
 	}
 
 	/**
-	 * Get $_POST and $_GET data on any form submit
+	 * delete db data of current ip address user
+	 *
+	 * @param $user_login
+	 * @param $user_email
+	 * @param $action
 	 */
-	public function handle_otp_form_action()
+	public function deletePastdata($user_login, $user_email, $action)
 	{
+		global $wpdb;
+		$ip = $this->getClientIP();
 
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}alpha_sms_login_register_actions WHERE action=%s AND (user_login=%s OR user_email=%s OR ip=%s)", $action, $user_login, $user_email, $ip
+			)
+		);
 	}
 
-	public function woo_new_order($order_id)
+	/**
+	 * Alert customer and admins when a new order is placed
+	 * @param $order_id
+	 */
+	public function wc_new_order_alert($order_id)
 	{
 		if (!$order_id) {
 			return;
 		}
 
-		$this->woo_order_status_change($order_id, 'pending', 'pending');
+		$this->wc_order_status_change_alert($order_id, 'pending', 'pending');
 	}
 
+	/** Utility functions for this class **/
+
 	/**
-	 * This method is executed after order is placed.
+	 * Alert customer and user when order status changes
 	 *
 	 * @param $order_id
 	 * @param $old_status
 	 * @param $new_status
 	 */
-	public function woo_order_status_change($order_id, $old_status, $new_status)
+	public function wc_order_status_change_alert($order_id, $old_status, $new_status)
 	{
 		if (!$order_id) {
 			return;
@@ -430,28 +540,7 @@ class Alpha_sms_Public {
 	}
 
 	/**
-	 * Send SMS via sms api
-	 *
-	 * @param $to
-	 * @param $body
-	 * @return false|mixed
-	 */
-	public function SendSMS($to, $body)
-	{
-		$api_key = !empty($this->options['api_key']) ? $this->options['api_key'] : '';
-		$sender_id = !empty($this->options['sender_id']) ? trim($this->options['sender_id']) : '';
-
-		require_once plugin_dir_path(__DIR__) . 'includes/sms.class.php';
-
-		$sms = new AlphaSMS($api_key);
-		$sms->numbers = $to;
-		$sms->body = $body;
-		$sms->sender_id = $sender_id;
-
-		return $sms->Send();
-	}
-
-	/**
+	 * Get all the phone number associated with administration role
 	 * @return array
 	 */
 	public function admin_phones()
@@ -468,23 +557,18 @@ class Alpha_sms_Public {
 		return $numbers;
 	}
 
-
-	public function woocommerce_login_form_end()
-	{
-        return;
-    }
-
-
-
-
 	/**
 	 * WordPress login with Phone Number methods
 	 *
 	 */
 
-	public function login_enqueue_styles()
+	public function login_enqueue_style()
 	{
 		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/otp-login-form.css', [], $this->version, 'all');
+	}
+
+	public function login_enqueue_script()
+	{
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/otp-login-form.js', ['jquery'], $this->version, false);
 		wp_localize_script(
 			$this->plugin_name,
@@ -493,16 +577,14 @@ class Alpha_sms_Public {
 		);
 	}
 
-
 	/**
 	 * Add OTP view in login form
 	 *
 	 */
-	public function add_otp_in_login_form()
+	public function add_otp_field_in_login_form()
 	{
 		require_once('partials/' . $this->plugin_name . '-otp-login-form.php');
 	}
-
 
 	/**
 	 * Verify number and send otp
@@ -543,14 +625,15 @@ class Alpha_sms_Public {
 		$user_phone = get_user_meta($user_id, 'mobile_phone', true);
 
 		if (!$user_phone) {
+			$user_phone = get_user_meta($user_id, 'billing_phone', true);
+		}
+
+		if (!$user_phone) {
 			$response = ['status' => 402, 'message' => __('No phone number found')];
 			echo wp_kses_post(json_encode($response));
 			wp_die();
 			exit;
 		}
-
-		$api_key = !empty($this->options['api_key']) ? $this->options['api_key'] : '';
-		$sender_id = !empty($this->options['sender_id']) ? trim($this->options['sender_id']) : '';
 
 		$ip = $this->getClientIP();
 		$action = 'Login';
@@ -561,14 +644,7 @@ class Alpha_sms_Public {
 		$number = $user_phone;
 		$body = $otp_code . ' is your one time password to login. It is valid for 2 minutes.';
 
-		require_once plugin_dir_path(__DIR__) . 'includes/sms.class.php';
-
-		$sms = new AlphaSMS($api_key);
-		$sms->numbers = $number;
-		$sms->body = $body;
-		$sms->sender_id = $sender_id;
-
-		$sms_response = $sms->Send();
+		$sms_response = $this->SendSMS($number, $body);
 
 		if ($sms_response->error === 0) {
 			// save info in database for later verification
@@ -585,81 +661,7 @@ class Alpha_sms_Public {
 	}
 
 	/**
-	 * Get client IP Address
-	 * @return mixed|string
-	 */
-	public function getClientIP()
-	{
-		$ipaddress = '';
-		if (isset($_SERVER['HTTP_CLIENT_IP']))
-			$ipaddress = $_SERVER['HTTP_CLIENT_IP'];
-		else if (isset($_SERVER['HTTP_X_FORWARDED_FOR']))
-			$ipaddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
-		else if (isset($_SERVER['HTTP_X_FORWARDED']))
-			$ipaddress = $_SERVER['HTTP_X_FORWARDED'];
-		else if (isset($_SERVER['HTTP_FORWARDED_FOR']))
-			$ipaddress = $_SERVER['HTTP_FORWARDED_FOR'];
-		else if (isset($_SERVER['HTTP_FORWARDED']))
-			$ipaddress = $_SERVER['HTTP_FORWARDED'];
-		else if (isset($_SERVER['REMOTE_ADDR']))
-			$ipaddress = $_SERVER['REMOTE_ADDR'];
-		else
-			$ipaddress = 'UNKNOWN';
-
-		return $ipaddress;
-	}
-
-	/**
-	 * Generate 6 digit otp code
-	 * @return string
-	 */
-	public function generateOTP()
-	{
-		$otp = '';
-
-		for ($i = 0; $i < 6; $i++) {
-			$otp .= mt_rand(0, 9);
-		}
-
-		return $otp;
-	}
-
-	/**
-	 * after sending otp to user, log the otp and data in db
-	 *
-	 * @param $user_id
-	 * @param $user_login
-	 * @param $user_email
-	 * @param $mobile_phone
-	 * @param $otp_code
-	 * @param $ip
-	 * @param $action
-	 * @return mixed
-	 */
-	public function log_login_register_action($user_id, $user_login, $user_email, $mobile_phone, $otp_code, $ip, $action)
-	{
-		global $wpdb;
-
-		$dateTime = new DateTime(TIMESTAMP);
-		$dateTime->modify('+2 minutes');
-
-		return $wpdb->insert(
-			$wpdb->prefix . "alpha_sms_login_register_actions",
-			[
-				'action'     => $action,
-				'user_id'    => $user_id,
-				'user_login' => $user_login,
-				'user_email' => $user_email,
-				'phone'      => $mobile_phone,
-				'passcode'   => $otp_code,
-				'ip'         => $ip,
-				'datetime'   => $dateTime->format('Y-m-d H:i:s')
-			]
-		);
-	}
-
-	/**
-	 * Login the user
+	 * Login the user verifying otp code
 	 *
 	 * @param $user
 	 * @param $username
@@ -675,6 +677,10 @@ class Alpha_sms_Public {
 		}
 
 		$user_phone = get_user_meta($user->data->ID, 'mobile_phone', true);
+
+		if (!$user_phone) {
+			$user_phone = get_user_meta($user->data->ID, 'billing_phone', true);
+		}
 
 		if (!$user_phone) {
 			return $user;
@@ -708,65 +714,12 @@ class Alpha_sms_Public {
 
 	}
 
-	/**
-	 * Select otp from db and compare
-	 *
-	 * @param $username
-	 * @param $action
-	 * @param $otp_code
-	 * @return bool
-	 */
-	public function authenticate_otp($username, $action, $otp_code)
+	public function otp_form_at_checkout()
 	{
-		global $wpdb;
-		$ip = $this->getClientIP();
-
-		$passcode = $wpdb->get_var("SELECT passcode FROM `{$wpdb->prefix}alpha_sms_login_register_actions` WHERE `action` = '$action' AND (`user_login` = '$username' OR `user_email` = '$username') AND `ip` = '$ip' AND `datetime` > '" . TIMESTAMP . "' ORDER BY id DESC LIMIT 1");
-
-		// check otp is correct or not
-		return (!empty($passcode) && $otp_code === $passcode);
+        if (!is_user_logged_in() && get_option('woocommerce_enable_signup_and_login_from_checkout')) {
+	        require_once('partials/' . $this->plugin_name . '-otp-checkout-form.php');
+        }
 	}
 
-	/**
-	 * delete db data of current ip address user
-	 *
-	 * @param $user_login
-	 * @param $user_email
-	 * @param $action
-	 */
-	public function deletePastdata($user_login, $user_email, $action)
-	{
-		global $wpdb;
-		$ip = $this->getClientIP();
-
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->prefix}alpha_sms_login_register_actions WHERE action=%s AND (user_login=%s OR user_email=%s OR ip=%s)", $action, $user_login, $user_email, $ip
-			)
-		);
-	}
-
-	/**
-	 * Get user from database with field name and field data
-	 * @param $db_field
-	 * @param $mobile_phone
-	 * @return null
-	 */
-	public function get_user_by_mobile_phone($db_field, $mobile_phone)
-	{
-		global $wpdb;
-
-		$user_id = $wpdb->get_row(
-			$wpdb->prepare("SELECT user_id FROM $wpdb->prefix" . "usermeta WHERE meta_key = %s AND REPLACE(meta_value, ' ', '') = %d LIMIT 1", $db_field, $mobile_phone)
-		);
-
-		if ($user_id) {
-			$array = json_decode(json_encode($user_id), true);
-
-			return get_user_by('ID', $array ["user_id"]);
-		}
-
-		return null;
-	}
 
 }

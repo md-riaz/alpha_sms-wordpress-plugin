@@ -1,9 +1,16 @@
+/* For Default Wordpress page login and registration code */
+
 window.$ = jQuery;
 
-$(function () {
-    // Perform AJAX login on form submit
-    $('form#loginform').find(':submit').on('click', saveAndSendOtp);
+let wp_login_form, wp_reg_form;
 
+// fill variables with appropriate selectors and attach event handlers
+$(function () {
+    wp_login_form = $('form#loginform');
+    wp_reg_form = $('form#registerform');
+    // Perform AJAX login on form submit
+    wp_login_form.find(':submit').on('click', WP_Login_SendOtp);
+    wp_reg_form.find(':submit').on('click', WP_Reg_SendOtp);
 });
 
 // Error template
@@ -16,11 +23,13 @@ function showSuccess(msg) {
     return `<div class="success"><strong>Success</strong>: ${msg}<br></div>`;
 }
 
-function saveAndSendOtp(e = null) {
+// ajax send otp for
+function WP_Login_SendOtp(e) {
 
     if (e) e.preventDefault();
 
-    $('form#loginform').find(':submit').prop('disabled', true).val('Processing');
+    wp_login_form.prev('#login_error, .success, .message').remove();
+    wp_login_form.find(':submit').prop('disabled', true).val('Processing');
 
     let data = {
         'action': 'alpha_sms_to_save_and_send_otp_login', //calls wp_ajax_nopriv_alpha_sms_to_save_and_send_otp_login
@@ -32,32 +41,64 @@ function saveAndSendOtp(e = null) {
 
     $.post(alpha_sms_object.ajaxurl, data, function (resp) {
 
-        $('form#loginform').prev('#login_error, .success, .message').remove();
-
         if (resp.status === 200) {
-            $('form#loginform').find(':submit').off('click');
+            wp_login_form.find(':submit').off('click');
             $('#alpha_sms-otp').fadeIn();
-            $(showSuccess(resp.message)).insertBefore('form#loginform');
-            timer('resend_otp', 12);
+            $(showSuccess(resp.message)).insertBefore(wp_login_form);
+            timer('resend_otp', 120, `<a href="javascript:WP_Login_SendOtp()">Resend OTP</a>`);
         } else if (resp.status === 402) {
             // no phone number found
-            $('form#loginform').find(':submit').off('click');
-            $('form#loginform').submit();
+            wp_login_form.find(':submit').off('click');
+            wp_login_form.submit();
         } else {
             // wrong user name pass/sms api error
-            $(showError(resp.message)).insertBefore('form#loginform');
+            $(showError(resp.message)).insertBefore(wp_login_form);
         }
 
     }, 'json').fail(
-        () => $(showError('Something went wrong. Please try again later')).insertBefore('form#loginform')
+        () => $(showError('Something went wrong. Please try again later')).insertBefore(wp_login_form)
     ).done(
-        ()=>  $('form#loginform').find(':submit').prop('disabled', false).val('Log In')
+        ()=>  wp_login_form.find(':submit').prop('disabled', false).val('Log In')
     );
 
 }
 
+// ajax send otp for wordpress registration
+function WP_Reg_SendOtp(e){
+    if (e) e.preventDefault();
 
-function timer(displayID, remaining) {
+    wp_reg_form.prev('#login_error, .success, .message').remove();
+    wp_reg_form.find(':submit').prop('disabled', true).val('Processing').text('Processing');
+
+    let data = {
+        'action': 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
+        'billing_phone' : wp_reg_form.find('#reg_billing_phone').val(),
+        'email' : wp_reg_form.find('#user_email').val()
+    }
+
+    $.post(alpha_sms_object.ajaxurl, data, function (resp) {
+
+
+        if (resp.status === 200) {
+            wp_reg_form.find(':submit').off('click');
+            $('#alpha_sms_otp_reg').fadeIn();
+            $(showSuccess(resp.message)).insertBefore(wp_reg_form);
+            timer('wc_resend_otp', 12, `<a href="javascript:WP_Reg_SendOtp()">Resend OTP</a>`);
+        } else {
+            // wrong user name pass/sms api error
+            $(showError(resp.message)).insertBefore(wp_reg_form);
+        }
+
+    }, 'json').fail(
+        () => $(showError('Something went wrong. Please try again later')).insertBefore(wp_reg_form)
+    ).done(
+        ()=>  wp_reg_form.find(':submit').prop('disabled', false).val('Register').text('Register')
+    );
+}
+
+
+
+function timer(displayID, remaining, timeoutEl = '') {
     let m = Math.floor(remaining / 60);
     let s = remaining % 60;
 
@@ -68,10 +109,10 @@ function timer(displayID, remaining) {
 
     if(remaining >= 0) {
         setTimeout(function() {
-            timer(displayID, remaining);
+            timer(displayID, remaining, timeoutEl);
         }, 1000);
         return;
     }
     // Do timeout stuff here
-    document.getElementById(displayID).innerHTML = `<a href="javascript:saveAndSendOtp()">Resend OTP</a>`
+    document.getElementById(displayID).innerHTML = timeoutEl
 }

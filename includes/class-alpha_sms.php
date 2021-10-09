@@ -194,48 +194,22 @@ class Alpha_sms
 		$this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
 		$this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
 
-
-		// Woocommerce Reg/Account Phone field
-		if (isset($this->options['woocommerce_reg_phone'])){
-			// Display a field in Registration Form / Edit account
-			$this->loader->add_action('woocommerce_register_form_start', $plugin_public, 'wc_phone_on_reg');
-			$this->loader->add_action('woocommerce_edit_account_form_start', $plugin_public, 'wc_phone_on_reg');
-			// registration Field validation
-			$this->loader->add_filter( 'woocommerce_registration_errors', $plugin_public,'wc_registration_field_validation' );
-			// Save registration Field value
-			$this->loader->add_action( 'woocommerce_created_customer', $plugin_public, 'wc_save_account_registration_field' );
-			// Save Field value in Edit account
-			$this->loader->add_action('woocommerce_save_account_details', $plugin_public, 'wc_save_my_account_billing_phone');
-		}
-
-		// Phone field on WordPress Reg page
-		if ($this->options['reg_otp']){
-			// Display a field in Registration Form
-			$this->loader->add_action('register_form', $plugin_public, 'wp_phone_on_register');
-			// Add validation. In this case, we make sure phone is required.
-			$this->loader->add_filter( 'registration_errors', $plugin_public,'wp_phone_field_validation', 10, 3 );
-			// otp transaction challenge
-			$this->loader->add_action($this->plugin_name.'_generate_otp', $plugin_public, 'otp_challenge', 10, 4);
-			$this->loader->add_action('wp_ajax_nopriv_wp_otp_action', $plugin_public, 'process_otp_action');
-			$this->loader->add_action('init', $plugin_public, 'handle_otp_form_action'); // ekhan theke kaj korte hobe
-
-			// Finally, save our extra registration user meta.
-			$this->loader->add_action( 'user_register', $plugin_public, 'wp_user_register' );
-
-		}
-
 		// Woocommerce order status notifications
 		if ($this->options['order_status']){
-			$this->loader->add_action('woocommerce_order_status_changed', $plugin_public, 'woo_order_status_change', 10, 3);
-			$this->loader->add_action('woocommerce_new_order', $plugin_public, 'woo_new_order');
+			$this->loader->add_action('woocommerce_order_status_changed', $plugin_public, 'wc_order_status_change_alert', 10, 3);
+			$this->loader->add_action('woocommerce_new_order', $plugin_public, 'wc_new_order_alert');
 		}
 
 		// Phone number otp verification on login
 		if ($this->options['login_otp']){
 			// load css and js to login page
-			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_styles');
+			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_style');
+			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_script');
 			// add otp form to login page
-			$this->loader->add_action('login_form', $plugin_public, 'add_otp_in_login_form');
+			$this->loader->add_action('login_form', $plugin_public, 'add_otp_field_in_login_form');
+			// add otp form to login page in Woocommerce
+			$this->loader->add_action('woocommerce_login_form', $plugin_public, 'add_otp_field_in_login_form');
+
 			// phone number submit action from jQuery $.post
 			$this->loader->add_action('wp_ajax_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
 			$this->loader->add_action('wp_ajax_nopriv_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
@@ -243,8 +217,51 @@ class Alpha_sms
 			// login user based on otp
 			$this->loader->add_filter('authenticate', $plugin_public,'login_user', 30, 3);
 
-			$this->loader->add_action('woocommerce_login_form_end', $plugin_public, 'woocommerce_login_form_end');
 		}
+
+		if ($this->options['reg_otp']){
+			/*
+			 * Default WordPress Registration Form
+			 *
+			 */
+
+			// Display a field in Registration Form
+			$this->loader->add_action('register_form', $plugin_public, 'wp_phone_on_register');
+			$this->loader->add_action('register_form', $plugin_public, 'add_otp_field_on_reg_form');
+			// Add validation. In this case, we make sure phone is required.
+			$this->loader->add_filter( 'registration_errors', $plugin_public,'wp_register_form_validation', 10, 3 );
+			// Finally, save our extra registration user meta.
+			$this->loader->add_action( 'user_register', $plugin_public, 'register_the_customer' );
+
+			/*
+			 * Woocommerce Reg/Account Phone field
+			 *
+			 */
+
+			// Display a field in Registration Form / Edit account
+			$this->loader->add_action('woocommerce_register_form_start', $plugin_public, 'wc_phone_on_register');
+			$this->loader->add_action('woocommerce_edit_account_form_start', $plugin_public, 'wc_phone_on_register');
+			$this->loader->add_action('woocommerce_register_form', $plugin_public, 'add_otp_field_on_reg_form');
+			// registration Field validation
+			$this->loader->add_filter( 'woocommerce_registration_errors', $plugin_public,'wc_register_form_validation' );
+			// Save registration Field value
+			$this->loader->add_action( 'woocommerce_created_customer', $plugin_public, 'register_the_customer' );
+			// Save Field value in Edit account
+			$this->loader->add_action('woocommerce_save_account_details', $plugin_public, 'register_the_customer');
+
+
+			/*
+			* ajax post path for sending otp in Default WordPress Reg Form or Woocommerce Reg form
+			*
+			*/
+
+			$this->loader->add_action('wp_ajax_wc_send_otp', $plugin_public, 'send_otp_for_reg');
+			$this->loader->add_action('wp_ajax_nopriv_wc_send_otp', $plugin_public, 'send_otp_for_reg');
+
+			$this->loader->add_action('woocommerce_review_order_before_submit', $plugin_public, 'otp_form_at_checkout');
+
+		}
+
 	}
 
 	/**
