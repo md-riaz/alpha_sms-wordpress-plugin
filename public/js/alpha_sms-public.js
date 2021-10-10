@@ -131,8 +131,6 @@ function WP_Checkout_SendOtp(e){
 
 	}, 'json').fail(
 		() => alert_wrapper.html(showError(showError('Something went wrong. Please try again later')))
-	).done(
-		()=>  checkout_form.find(':submit').prop('disabled', false).val('Place order').text('Place order')
 	);
 }
 
