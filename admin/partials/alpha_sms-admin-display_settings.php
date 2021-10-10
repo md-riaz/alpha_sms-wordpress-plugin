@@ -25,8 +25,9 @@ if (!defined('WPINC')) die;
     <!--   show admin notice when settings are saved-->
 	<?php settings_errors(); ?>
 
-    <form method="post" name="<?php echo $this->plugin_name; ?>" action="options.php">
+    <form method="post" name="<?php echo $this->plugin_name; ?>" action="options.php" id="<?php echo $this->plugin_name; ?>">
 		<?php
+
 		//Grab all options
 		$options = get_option($this->plugin_name);
 

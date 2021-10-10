@@ -229,7 +229,7 @@ class Alpha_sms
 			$this->loader->add_action('register_form', $plugin_public, 'wp_phone_on_register');
 			$this->loader->add_action('register_form', $plugin_public, 'add_otp_field_on_reg_form');
 			// Add validation. In this case, we make sure phone is required.
-			$this->loader->add_filter( 'registration_errors', $plugin_public,'wp_register_form_validation', 10, 3 );
+			$this->loader->add_filter( 'registration_errors', $plugin_public,'register_form_validation', 10, 3 );
 			// Finally, save our extra registration user meta.
 			$this->loader->add_action( 'user_register', $plugin_public, 'register_the_customer' );
 
@@ -243,7 +243,7 @@ class Alpha_sms
 			$this->loader->add_action('woocommerce_edit_account_form_start', $plugin_public, 'wc_phone_on_register');
 			$this->loader->add_action('woocommerce_register_form', $plugin_public, 'add_otp_field_on_reg_form');
 			// registration Field validation
-			$this->loader->add_filter( 'woocommerce_registration_errors', $plugin_public,'wc_register_form_validation' );
+			$this->loader->add_filter( 'woocommerce_registration_errors', $plugin_public,'register_form_validation' ,10, 3 );
 			// Save registration Field value
 			$this->loader->add_action( 'woocommerce_created_customer', $plugin_public, 'register_the_customer' );
 			// Save Field value in Edit account

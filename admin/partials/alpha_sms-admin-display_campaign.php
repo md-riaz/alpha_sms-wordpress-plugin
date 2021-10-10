@@ -40,11 +40,11 @@ if (!defined('WPINC')) die;
         <!-- Checkbox -->
         <fieldset>
             <legend class="screen-reader-text">
-                <span><?php esc_attr_e( 'Include woocommerce users', $this->plugin_name ); ?></span>
+                <span><?php esc_attr_e( 'Include all customers', $this->plugin_name ); ?></span>
             </legend>
-            <label for="<?php echo $this->plugin_name; ?>-woocommerce_users">
-                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-woocommerce_users" name="<?php echo $this->plugin_name; ?>[woocommerce_users]" value="1" />
-                <span><?php esc_attr_e('Include woocommerce users', $this->plugin_name ); ?></span>
+            <label for="<?php echo $this->plugin_name; ?>-all_users">
+                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-all_users" name="<?php echo $this->plugin_name; ?>[all_users]" value="1" />
+                <span><?php esc_attr_e('Include all customers', $this->plugin_name ); ?></span>
             </label>
         </fieldset>
 

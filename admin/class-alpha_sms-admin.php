@@ -128,7 +128,6 @@ class Alpha_sms_Admin {
 
 	public function add_admin_menu()
 	{
-
 		// Primary Main menu 
 		add_menu_page(
 			'Alpha SMS',
@@ -140,7 +139,7 @@ class Alpha_sms_Admin {
 			76
 		);
 
-		add_submenu_page($this->plugin_name, 'SMS Campain', 'Campain', 'manage_options', $this->plugin_name, [$this, 'display_campaign_page']);
+		add_submenu_page($this->plugin_name, 'SMS Campaign', 'Campaign', 'manage_options', $this->plugin_name, [$this, 'display_campaign_page']);
 
 		add_submenu_page($this->plugin_name, 'Alpha SMS Settings', 'Settings', 'manage_options', $this->plugin_name . '_settings', [$this, 'display_setting_page']);
 	}
@@ -209,7 +208,7 @@ class Alpha_sms_Admin {
 		$numbersArr = [];
 
 		$numbers = (isset($_POST[$this->plugin_name]['numbers']) && !empty($_POST[$this->plugin_name]['numbers'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['numbers']) : '';
-		$include_woo_users = (isset($_POST[$this->plugin_name]['woocommerce_users']) && !empty($_POST[$this->plugin_name]['woocommerce_users'])) ? 1 : 0;
+		$include_all_users = (isset($_POST[$this->plugin_name]['all_users']) && !empty($_POST[$this->plugin_name]['all_users'])) ? 1 : 0;
 		$body = (isset($_POST[$this->plugin_name]['body']) && !empty($_POST[$this->plugin_name]['body'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['body']) : false;
 
 		// Empty body
@@ -226,8 +225,8 @@ class Alpha_sms_Admin {
 			$numbersArr = explode(PHP_EOL, $numbers);
 		}
 
-		if ($include_woo_users) {
-			$woo_numbers = $this->getWoocommerceCustomerPhone();
+		if ($include_all_users) {
+			$woo_numbers = $this->getCustomersPhone();
 			$numbersArr = array_merge($numbersArr, $woo_numbers);
 		}
 
@@ -290,7 +289,7 @@ class Alpha_sms_Admin {
 		update_option($this->plugin_name . '_notices', $notices);
 	}
 
-	public function getWoocommerceCustomerPhone()
+	public function getCustomersPhone()
 	{
 		global $wpdb;
 

@@ -88,3 +88,7 @@ ol.switches {
     transform: translateX(20px);
     background: white;
 }
+#alpha_sms input[type="submit"] {
+    background: var(--pmr_clr);
+    border-color: var(--pmr_clr);
+}

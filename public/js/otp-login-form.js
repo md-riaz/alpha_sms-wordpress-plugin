@@ -83,7 +83,7 @@ function WP_Reg_SendOtp(e){
             wp_reg_form.find(':submit').off('click');
             $('#alpha_sms_otp_reg').fadeIn();
             $(showSuccess(resp.message)).insertBefore(wp_reg_form);
-            timer('wc_resend_otp', 12, `<a href="javascript:WP_Reg_SendOtp()">Resend OTP</a>`);
+            timer('wc_resend_otp', 120, `<a href="javascript:WP_Reg_SendOtp()">Resend OTP</a>`);
         } else {
             // wrong user name pass/sms api error
             $(showError(resp.message)).insertBefore(wp_reg_form);

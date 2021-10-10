@@ -13,11 +13,11 @@
  * @package           Alpha_sms
  *
  * @wordpress-plugin
- * Plugin Name:       AlphaSMS
- * Plugin URI:        https://alpha.net.bd
- * Description:       This is a short description of what the plugin does. It's displayed in the WordPress admin area.
+ * Plugin Name:       Alpha SMS
+ * Plugin URI:        https://alpha.net.bd/SMS/
+ * Description:       SMS Campaign to customers and SMS OTP Verification for WordPress/Woocommerce Login & Registration page. Get notified via SMS after placing an order or order status change. Buyer and admin both can get SMS notification after an order is placed. <a href="https://alpha.net.bd/SMS/SignUp/">Register For Alpha SMS</a> now and get access to api key.
  * Version:           1.0.0
- * Author:            Alpha Net Developer Team
+ * Author:            sms.net.bd
  * Author URI:        https://alpha.net.bd
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt

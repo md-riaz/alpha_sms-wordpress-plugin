@@ -14,7 +14,3 @@
 .mb-3{
     margin-bottom: 1rem !important;
 }
-
-button#place_order {
-    display: none;
-}

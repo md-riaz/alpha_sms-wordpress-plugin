@@ -5,4 +5,5 @@
 		<input type="number" class="input" id="otp_code" name="otp_code"/>
 	</div>
 </div>
-<button type="button" class="button alt" name="woocommerce_checkout_place_order" id="place_order2">Confirm Phone</button>
+<button type="button" class="button alt" name="woocommerce_checkout_place_order" id="place_order2">Place order</button>
+<style>button#place_order {display: none;}</style>

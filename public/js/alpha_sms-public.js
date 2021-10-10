@@ -16,9 +16,7 @@ $(function () {
 
 	if (checkout_otp.length) {
 		checkout_form = $('form.checkout.woocommerce-checkout');
-		setTimeout(() => {
-			checkout_form.find('#place_order2').on('click', WP_Checkout_SendOtp);
-		}, 500)
+		$(document).on('click', '#place_order2', WP_Checkout_SendOtp);
 	}
 });
 
@@ -34,9 +32,18 @@ function showSuccess(msg) {
 
 // ajax send otp for woocommerce login
 function WP_Login_SendOtp(e) {
-
-	e.preventDefault();
+	if (e) e.preventDefault();
 	alert_wrapper.html('');
+
+	let username = form.find('#username').val();
+	let password = form.find('#password').val();
+
+	if (!username || !password) {
+		alert_wrapper.html(showError('Fill in the required fields.'));
+		$('html,body').animate({ scrollTop: 0 }, 'slow');
+		return
+	}
+
 	form.find(':submit').prop('disabled', true).val('Processing').text('Processing');
 
 	let data = {
@@ -63,7 +70,7 @@ function WP_Login_SendOtp(e) {
 		}
 
 	}, 'json').fail(
-		() => alert_wrapper.html(showError(showError('Something went wrong. Please try again later')))
+		() => alert_wrapper.html(showError('Something went wrong. Please try again later'))
 	).done(
 		()=>  form.find(':submit').prop('disabled', false).val('Log In').text('Log In')
 	);
@@ -73,8 +80,18 @@ function WP_Login_SendOtp(e) {
 // ajax send otp for woocommerce registration
 function WP_Reg_SendOtp(e){
 	if (e) e.preventDefault();
-
 	alert_wrapper.html('');
+
+	let phone = wc_reg_form.find('#reg_billing_phone').val();
+	let email = wc_reg_form.find('#reg_email').val();
+	let password = wc_reg_form.find('#reg_password').val();
+
+	if (!phone || !email || !password) {
+		alert_wrapper.html(showError('Fill in the required fields.'));
+		$('html,body').animate({ scrollTop: 0 }, 'slow');
+		return
+	}
+
 	wc_reg_form.find(':submit').prop('disabled', true).val('Processing').text('Processing');
 
 	let data = {
@@ -107,7 +124,23 @@ function WP_Reg_SendOtp(e){
 function WP_Checkout_SendOtp(e){
 	if (e) e.preventDefault();
 	alert_wrapper.html('');
-	console.log(checkout_form.find('#place_order2'))
+
+	let firstName = checkout_form.find('#billing_first_name').val();
+	let lastName = checkout_form.find('#billing_last_name').val();
+	let country = checkout_form.find('#billing_country').val();
+	let address = checkout_form.find('#billing_address_1').val();
+	let city = checkout_form.find('#billing_city').val();
+	let state = checkout_form.find('#billing_state').val();
+	let phone = checkout_form.find('#billing_phone').val();
+	let email = checkout_form.find('#billing_email').val();
+	let password = checkout_form.find('#account_password').val();
+
+	if (!firstName || !lastName || !country || !address || !city || !state || !phone || !email || !password) {
+		checkout_form.prev(alert_wrapper).html(showError('Fill in the required fields.'));
+		$('html,body').animate({ scrollTop: checkout_form.offset().top }, 'slow');
+		return
+	}
+
 	checkout_form.find('#place_order2').prop('disabled', true).val('Processing').text('Processing');
 
 	let data = {
@@ -122,16 +155,16 @@ function WP_Checkout_SendOtp(e){
 			checkout_form.find('#place_order2').remove();
 			checkout_form.find('#place_order').show();
 			$('#alpha_sms-otp_checkout').fadeIn();
-			alert_wrapper.html(showSuccess(resp.message));
-			timer('wc_checkout_resend_otp', 12, `<a href="javascript:WP_Checkout_SendOtp()">Resend OTP</a>`);
+			checkout_form.prev(alert_wrapper).html(showSuccess(resp.message));
+			timer('wc_checkout_resend_otp', 120, `<a href="javascript:WP_Checkout_SendOtp()">Resend OTP</a>`);
 		} else {
 			// wrong user name pass/sms api error
-			alert_wrapper.html(showError(resp.message));
+			checkout_form.prev(alert_wrapper).html(showError(resp.message));
 		}
 
 	}, 'json').fail(
-		() => alert_wrapper.html(showError(showError('Something went wrong. Please try again later')))
-	);
+		() => checkout_form.prev(alert_wrapper).html(showError(showError('Something went wrong. Please try again later')))
+	).done(()=> $('html,body').animate({ scrollTop: checkout_form.offset().top }, 'slow'));
 }
 
 
