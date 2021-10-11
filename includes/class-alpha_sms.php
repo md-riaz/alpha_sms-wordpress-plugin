@@ -195,21 +195,27 @@ class Alpha_sms
 		$this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
 
 		// Woocommerce order status notifications
-		if ($this->options['order_status']){
+		if ($this->options['order_status_buyer'] || $this->options['order_status_admin']) {
 			$this->loader->add_action('woocommerce_order_status_changed', $plugin_public, 'wc_order_status_change_alert', 10, 3);
 			$this->loader->add_action('woocommerce_new_order', $plugin_public, 'wc_new_order_alert');
 		}
 
 		// Phone number otp verification on login
-		if ($this->options['login_otp']){
+		if ($this->options['wp_login']) {
 			// load css and js to login page
 			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_style');
 			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_script');
 			// add otp form to login page
-			$this->loader->add_action('login_form', $plugin_public, 'add_otp_field_in_login_form');
-			// add otp form to login page in Woocommerce
-			$this->loader->add_action('woocommerce_login_form', $plugin_public, 'add_otp_field_in_login_form');
+			$this->loader->add_action('login_form', $plugin_public, 'add_otp_field_in_wp_login_form');
+		}
 
+
+		if ($this->options['wc_login']){
+			// add otp form to login page in Woocommerce
+			$this->loader->add_action('woocommerce_login_form', $plugin_public, 'add_otp_field_in_wc_login_form');
+		}
+
+		if ($this->options['wp_login'] || $this->options['wc_login']) {
 			// phone number submit action from jQuery $.post
 			$this->loader->add_action('wp_ajax_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
 			$this->loader->add_action('wp_ajax_nopriv_alpha_sms_to_save_and_send_otp_login', $plugin_public, 'save_and_send_otp_login');
@@ -217,14 +223,14 @@ class Alpha_sms
 			// login user based on otp
 			$this->loader->add_filter('authenticate', $plugin_public,'login_user', 30, 3);
 
+			// add action type in the login forms
+			$this->loader->add_action('login_form', $plugin_public, 'add_action_type_in_wp_login');
+			$this->loader->add_action('woocommerce_login_form', $plugin_public, 'add_action_type_in_wc_login');
+
 		}
 
-		if ($this->options['reg_otp']){
-			/*
-			 * Default WordPress Registration Form
-			 *
-			 */
-
+		/* WordPress Reg Phone OTP */
+		if ($this->options['wp_reg']){
 			// Display a field in Registration Form
 			$this->loader->add_action('register_form', $plugin_public, 'wp_phone_on_register');
 			$this->loader->add_action('register_form', $plugin_public, 'add_otp_field_on_reg_form');
@@ -232,12 +238,10 @@ class Alpha_sms
 			$this->loader->add_filter( 'registration_errors', $plugin_public,'register_form_validation', 10, 3 );
 			// Finally, save our extra registration user meta.
 			$this->loader->add_action( 'user_register', $plugin_public, 'register_the_customer' );
+		}
 
-			/*
-			 * Woocommerce Reg/Account Phone field
-			 *
-			 */
-
+		/* Woocommerce Reg/Account Phone OTP */
+		if ($this->options['wc_reg']) {
 			// Display a field in Registration Form / Edit account
 			$this->loader->add_action('woocommerce_register_form_start', $plugin_public, 'wc_phone_on_register');
 			$this->loader->add_action('woocommerce_edit_account_form_start', $plugin_public, 'wc_phone_on_register');
@@ -248,20 +252,20 @@ class Alpha_sms
 			$this->loader->add_action( 'woocommerce_created_customer', $plugin_public, 'register_the_customer' );
 			// Save Field value in Edit account
 			$this->loader->add_action('woocommerce_save_account_details', $plugin_public, 'register_the_customer');
+		}
 
-
-			/*
-			* ajax post path for sending otp in Default WordPress Reg Form or Woocommerce Reg form
-			*
-			*/
-
+		if ($this->options['wp_reg'] || $this->options['wc_reg']) {
+		// ajax post path for sending otp in Default WordPress Reg Form or Woocommerce Reg form
 			$this->loader->add_action('wp_ajax_wc_send_otp', $plugin_public, 'send_otp_for_reg');
 			$this->loader->add_action('wp_ajax_nopriv_wc_send_otp', $plugin_public, 'send_otp_for_reg');
+		}
+
+		// otp for guest checkout
+		if ($this->options['otp_checkout']) {
 
 			$this->loader->add_action('woocommerce_review_order_before_submit', $plugin_public, 'otp_form_at_checkout');
 
 		}
-
 	}
 
 	/**

@@ -128,7 +128,7 @@ class Alpha_sms_Admin {
 
 	public function add_admin_menu()
 	{
-		// Primary Main menu 
+		// Primary Main menu
 		add_menu_page(
 			'Alpha SMS',
 			'Alpha SMS',
@@ -184,8 +184,25 @@ class Alpha_sms_Admin {
 		$options['sender_id'] = (isset($input['sender_id']) && !empty($input['sender_id'])) ? esc_attr($input['sender_id']) : '';
 
 		$options['order_status'] = (isset($input['order_status']) && !empty($input['order_status'])) ? 1 : 0;
-		$options['login_otp'] = (isset($input['login_otp']) && !empty($input['login_otp'])) ? 1 : 0;
-		$options['reg_otp'] = (isset($input['reg_otp']) && !empty($input['reg_otp'])) ? 1 : 0;
+		$options['wp_reg'] = (isset($input['wp_reg']) && !empty($input['wp_reg'])) ? 1 : 0;
+		$options['wp_login'] = (isset($input['wp_login']) && !empty($input['wp_login'])) ? 1 : 0;
+		$options['wc_reg'] = (isset($input['wc_reg']) && !empty($input['wc_reg'])) ? 1 : 0;
+		$options['wc_login'] = (isset($input['wc_login']) && !empty($input['wc_login'])) ? 1 : 0;
+		$options['otp_checkout'] = (isset($input['otp_checkout']) && !empty($input['otp_checkout'])) ? 1 : 0;
+
+		$options['order_status_buyer'] = (isset($input['order_status_buyer']) && !empty($input['order_status_buyer'])) ? 1 : 0;
+		$options['BUYER_SMS_PENDING'] = (isset($input['BUYER_SMS_PENDING']) && !empty($input['BUYER_SMS_PENDING'])) ? esc_attr($input['BUYER_SMS_PENDING']) : '';
+		$options['BUYER_SMS_ON_HOLD'] = (isset($input['BUYER_SMS_ON_HOLD']) && !empty($input['BUYER_SMS_ON_HOLD'])) ? esc_attr($input['BUYER_SMS_ON_HOLD']) : '';
+		$options['BUYER_SMS_PROCESSING'] = (isset($input['BUYER_SMS_PROCESSING']) && !empty($input['BUYER_SMS_PROCESSING'])) ? esc_attr($input['BUYER_SMS_PROCESSING']) : '';
+		$options['BUYER_SMS_COMPLETED'] = (isset($input['BUYER_SMS_COMPLETED']) && !empty($input['BUYER_SMS_COMPLETED'])) ? esc_attr($input['BUYER_SMS_COMPLETED']) : '';
+		$options['BUYER_SMS_CANCELLED'] = (isset($input['BUYER_SMS_CANCELLED']) && !empty($input['BUYER_SMS_CANCELLED'])) ? esc_attr($input['BUYER_SMS_CANCELLED']) : '';
+
+		$options['order_status_admin'] = (isset($input['order_status_admin']) && !empty($input['order_status_admin'])) ? 1 : 0;
+		$options['ADMIN_SMS_PENDING'] = (isset($input['ADMIN_SMS_PENDING']) && !empty($input['ADMIN_SMS_PENDING'])) ? esc_attr($input['ADMIN_SMS_PENDING']) : '';
+		$options['ADMIN_SMS_ON_HOLD'] = (isset($input['ADMIN_SMS_ON_HOLD']) && !empty($input['ADMIN_SMS_ON_HOLD'])) ? esc_attr($input['ADMIN_SMS_ON_HOLD']) : '';
+		$options['ADMIN_SMS_PROCESSING'] = (isset($input['ADMIN_SMS_PROCESSING']) && !empty($input['ADMIN_SMS_PROCESSING'])) ? esc_attr($input['ADMIN_SMS_PROCESSING']) : '';
+		$options['ADMIN_SMS_COMPLETED'] = (isset($input['ADMIN_SMS_COMPLETED']) && !empty($input['ADMIN_SMS_COMPLETED'])) ? esc_attr($input['ADMIN_SMS_COMPLETED']) : '';
+		$options['ADMIN_SMS_CANCELLED'] = (isset($input['ADMIN_SMS_CANCELLED']) && !empty($input['ADMIN_SMS_CANCELLED'])) ? esc_attr($input['ADMIN_SMS_CANCELLED']) : '';
 
 		return $options;
 	}
@@ -211,9 +228,21 @@ class Alpha_sms_Admin {
 		$include_all_users = (isset($_POST[$this->plugin_name]['all_users']) && !empty($_POST[$this->plugin_name]['all_users'])) ? 1 : 0;
 		$body = (isset($_POST[$this->plugin_name]['body']) && !empty($_POST[$this->plugin_name]['body'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['body']) : false;
 
+		//Grab all options
+		$options = get_option($this->plugin_name);
+		$api_key = !empty($options['api_key']) ? $options['api_key'] : '';
+		$sender_id = !empty($options['sender_id']) ? trim($options['sender_id']) : '';
+
 		// Empty body
 		if (!$body) {
 			$this->add_flash_notice(__("Fill the required fields properly", $this->plugin_name), "error");
+
+			// Redirect to plugin page
+			wp_redirect($_SERVER['HTTP_REFERER']);
+			exit();
+		}
+		if (!$api_key) {
+			$this->add_flash_notice(__("No valid API Key is set.", $this->plugin_name), "error");
 
 			// Redirect to plugin page
 			wp_redirect($_SERVER['HTTP_REFERER']);
@@ -232,11 +261,6 @@ class Alpha_sms_Admin {
 
 		// Final Numbers
 		$numbers = implode(',', $numbersArr);
-
-		//Grab all options
-		$options = get_option($this->plugin_name);
-		$api_key = !empty($options['api_key']) ? $options['api_key'] : '';
-		$sender_id = !empty($options['sender_id']) ? trim($options['sender_id']) : '';
 
 		require_once plugin_dir_path(__DIR__) . 'includes/sms.class.php';
 

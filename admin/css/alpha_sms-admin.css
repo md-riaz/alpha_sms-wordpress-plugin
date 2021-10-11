@@ -4,91 +4,124 @@
  */
 
 .mb-0 {
-    margin-bottom: 0;
+   margin-bottom: 0;
+}
+.m-0 {
+   margin: 0;
+}
+.mt-1 {
+   margin-top: 0.25rem;
+}
+.mb-1 {
+   margin-bottom: 0.25rem;
+}
+.my-1 {
+   margin-top: 0.25rem;
+   margin-bottom: 0.25rem;
 }
 
 .mb-2 {
-    margin-bottom: 0.5rem !important;
+   margin-bottom: 0.5rem !important;
 }
 
 .d-block {
-    display: block;
+   display: block;
 }
 
-h2 .dashicons {
-    line-height: 1.5;
-}
-
-.switches [type="checkbox"] {
-    position: absolute;
-    left: -9999px;
+.switches [type='checkbox'] {
+   position: absolute;
+   left: -9999px;
 }
 
 .switches {
-    max-width: 500px;
-    width: 95%;
-    margin: 0;
+   width: 95%;
+   margin: 0;
 }
 
 ol.switches {
-    list-style: none;
+   list-style: none;
 }
 
 .switches li {
-    position: relative;
-    counter-increment: switchCounter;
+   position: relative;
+   counter-increment: switchCounter;
 }
 
 .switches label {
-    display: flex;
-    align-items: center;
+   display: flex;
+   align-items: center;
+   max-width: 500px;
 }
 
 /*CUSTOM VARIABLES HERE*/
 :root {
-    --pmr_clr : #3858e9;
+   --pmr_clr: #3858e9;
 }
 .switches span.toggle_btn {
-    position: relative;
-    width: 40px;
-    height: 20px;
-    border-radius: 15px;
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.4);
-    background: #fff;
-    transition: all 0.3s;
-    margin-right: 10px;
+   position: relative;
+   width: 40px;
+   height: 20px;
+   border-radius: 15px;
+   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.4);
+   background: #fff;
+   transition: all 0.3s;
+   margin-right: 10px;
 }
 .switches span.toggle_btn + span {
-    font-size: 1rem;
+   font-size: 1rem;
 }
 .switches span.toggle_btn::before,
 .switches span.toggle_btn::after {
-    content: "";
-    position: absolute;
+   content: '';
+   position: absolute;
 }
 
 .switches span.toggle_btn::before {
-    left: 2px;
-    top: 2px;
-    width: 16px;
-    height: 16px;
-    background: #3858e9;
-    background: var(--pmr_clr);
-    border-radius: 50%;
-    z-index: 1;
-    transition: transform 0.3s;
+   left: 2px;
+   top: 2px;
+   width: 16px;
+   height: 16px;
+   background: #3858e9;
+   background: var(--pmr_clr);
+   border-radius: 50%;
+   z-index: 1;
+   transition: transform 0.3s;
 }
 
-.switches [type="checkbox"]:checked + label span.toggle_btn {
-    background: #3858e9;
-    background: var(--pmr_clr);
+.switches [type='checkbox']:checked + label span.toggle_btn {
+   background: #3858e9;
+   background: var(--pmr_clr);
 }
 
-.switches [type="checkbox"]:checked + label span.toggle_btn::before {
-    transform: translateX(20px);
-    background: white;
+.switches [type='checkbox']:checked + label span.toggle_btn::before {
+   transform: translateX(20px);
+   background: white;
 }
-#alpha_sms input[type="submit"] {
-    background: var(--pmr_clr);
-    border-color: var(--pmr_clr);
+#alpha_sms input[type='submit'] {
+   background: #3858e9;
+   background: var(--pmr_clr);
+   border-color: var(--pmr_clr);
+}
+
+.notify_template {
+   margin-left: 50px;
+}
+.notify_template textarea {
+   font-size: 0.875rem;
+}
+
+#order_status_admin,
+#order_status_buyer {
+   display: none;
+}
+.sms_tokens span {
+   color: #3858e9;
+   color: var(--pmr_clr);
+}
+.toggle_container {
+   display: flex;
+   font-size: 1rem;
+}
+.toggle_visible {
+   cursor: pointer;
 }
