@@ -70,12 +70,7 @@ function WC_Login_SendOtp(e) {
       function (resp) {
          if (resp.status === 200) {
             form.find(':submit').off('click');
-            $('#alpha_sms_otp').fadeIn();
-            form
-               .find(
-                  '.woocommerce-form-row.woocommerce-form-row--wide.form-row.form-row-wide'
-               )
-               .hide();
+            $('#alpha_sms_otp').fadeIn().prevAll().hide();
             alert_wrapper.html(showSuccess(resp.message));
             timer(
                'resend_otp',

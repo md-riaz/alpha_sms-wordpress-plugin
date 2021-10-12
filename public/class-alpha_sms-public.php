@@ -3,16 +3,6 @@
 /**
  * The public-facing functionality of the plugin.
  *
- * @link       https://alpha.net.bd
- * @since      1.0.0
- *
- * @package    Alpha_sms
- * @subpackage Alpha_sms/public
- */
-
-/**
- * The public-facing functionality of the plugin.
- *
  * Defines the plugin name, version, and two examples hooks for how to
  * enqueue the public-facing stylesheet and JavaScript.
  *
@@ -420,6 +410,50 @@ class Alpha_sms_Public
     }
 
     /**
+     * Register Form Validation
+     * @param $errors
+     * @param $sanitized_user_login
+     * @param $user_email
+     * @return mixed
+     */
+    public function register_form_validation($errors, $sanitized_user_login, $user_email)
+    {
+        global $wpdb;
+        if (empty($_REQUEST['billing_phone']) || !is_numeric($_REQUEST['billing_phone']) || !$this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']))) {
+            $errors->add('phone_error', __('You phone number is not valid.', $this->plugin_name));
+        }
+
+        $billing_phone = $this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']));
+
+        $hasPhoneNumber = get_users('meta_value=' . $billing_phone);
+
+        if (!empty($hasPhoneNumber)) {
+            $errors->add('duplicate_phone_error', __('Mobile number is already used!', $this->plugin_name));
+        }
+
+        if (!empty($_REQUEST['otp_code'])) {
+
+            $otp_code = $wpdb->_escape($_REQUEST['otp_code']);
+
+            $email = sanitize_email($user_email);
+            $action = 'Registration';
+
+            $valid_user = $this->authenticate_otp($email, $action, trim($otp_code));
+
+            if ($valid_user) {
+                $this->deletePastdata($email, $email, $action);
+
+                return $errors;
+            }
+        }
+
+        // otp validation failed or no otp provided
+        $errors->add('otp_error', __('Invalid OTP entered!', $this->plugin_name));
+
+        return $errors;
+    }
+
+    /**
      * Select otp from db and compare
      *
      * @param $username
@@ -474,50 +508,6 @@ class Alpha_sms_Public
         if ($this->options['otp_checkout'] || ($this->options['wc_reg'] && $_POST['action_type'] === 'wc_reg')) {
             $this->register_form_validation($errors, $sanitized_user_login, $user_email);
         }
-
-        return $errors;
-    }
-
-    /**
-     * Register Form Validation
-     * @param $errors
-     * @param $sanitized_user_login
-     * @param $user_email
-     * @return mixed
-     */
-    public function register_form_validation($errors, $sanitized_user_login, $user_email)
-    {
-        global $wpdb;
-        if (empty($_REQUEST['billing_phone']) || !is_numeric($_REQUEST['billing_phone']) || !$this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']))) {
-            $errors->add('phone_error', __('You phone number is not valid.', $this->plugin_name));
-        }
-
-        $billing_phone = $this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']));
-
-        $hasPhoneNumber = get_users('meta_value=' . $billing_phone);
-
-        if (!empty($hasPhoneNumber)) {
-            $errors->add('duplicate_phone_error', __('Mobile number is already used!', $this->plugin_name));
-        }
-
-        if (!empty($_REQUEST['otp_code'])) {
-
-            $otp_code = $wpdb->_escape($_REQUEST['otp_code']);
-
-            $email = sanitize_email($user_email);
-            $action = 'Registration';
-
-            $valid_user = $this->authenticate_otp($email, $action, trim($otp_code));
-
-            if ($valid_user) {
-                $this->deletePastdata($email, $email, $action);
-
-                return $errors;
-            }
-        }
-
-        // otp validation failed or no otp provided
-        $errors->add('otp_error', __('Invalid OTP entered!', $this->plugin_name));
 
         return $errors;
     }
