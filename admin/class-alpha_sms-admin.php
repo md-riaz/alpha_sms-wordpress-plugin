@@ -190,19 +190,13 @@ class Alpha_sms_Admin {
 		$options['wc_login'] = (isset($input['wc_login']) && !empty($input['wc_login'])) ? 1 : 0;
 		$options['otp_checkout'] = (isset($input['otp_checkout']) && !empty($input['otp_checkout'])) ? 1 : 0;
 
+		$options['admin_phones'] = (isset($input['admin_phones']) && !empty($input['admin_phones'])) ?  esc_attr($input['admin_phones']) : '';
+
 		$options['order_status_buyer'] = (isset($input['order_status_buyer']) && !empty($input['order_status_buyer'])) ? 1 : 0;
-		$options['BUYER_SMS_PENDING'] = (isset($input['BUYER_SMS_PENDING']) && !empty($input['BUYER_SMS_PENDING'])) ? esc_attr($input['BUYER_SMS_PENDING']) : '';
-		$options['BUYER_SMS_ON_HOLD'] = (isset($input['BUYER_SMS_ON_HOLD']) && !empty($input['BUYER_SMS_ON_HOLD'])) ? esc_attr($input['BUYER_SMS_ON_HOLD']) : '';
-		$options['BUYER_SMS_PROCESSING'] = (isset($input['BUYER_SMS_PROCESSING']) && !empty($input['BUYER_SMS_PROCESSING'])) ? esc_attr($input['BUYER_SMS_PROCESSING']) : '';
-		$options['BUYER_SMS_COMPLETED'] = (isset($input['BUYER_SMS_COMPLETED']) && !empty($input['BUYER_SMS_COMPLETED'])) ? esc_attr($input['BUYER_SMS_COMPLETED']) : '';
-		$options['BUYER_SMS_CANCELLED'] = (isset($input['BUYER_SMS_CANCELLED']) && !empty($input['BUYER_SMS_CANCELLED'])) ? esc_attr($input['BUYER_SMS_CANCELLED']) : '';
+		$options['BUYER_STATUS_SMS'] = (isset($input['BUYER_STATUS_SMS']) && !empty($input['BUYER_STATUS_SMS'])) ? esc_attr($input['BUYER_STATUS_SMS']) : '';
 
 		$options['order_status_admin'] = (isset($input['order_status_admin']) && !empty($input['order_status_admin'])) ? 1 : 0;
-		$options['ADMIN_SMS_PENDING'] = (isset($input['ADMIN_SMS_PENDING']) && !empty($input['ADMIN_SMS_PENDING'])) ? esc_attr($input['ADMIN_SMS_PENDING']) : '';
-		$options['ADMIN_SMS_ON_HOLD'] = (isset($input['ADMIN_SMS_ON_HOLD']) && !empty($input['ADMIN_SMS_ON_HOLD'])) ? esc_attr($input['ADMIN_SMS_ON_HOLD']) : '';
-		$options['ADMIN_SMS_PROCESSING'] = (isset($input['ADMIN_SMS_PROCESSING']) && !empty($input['ADMIN_SMS_PROCESSING'])) ? esc_attr($input['ADMIN_SMS_PROCESSING']) : '';
-		$options['ADMIN_SMS_COMPLETED'] = (isset($input['ADMIN_SMS_COMPLETED']) && !empty($input['ADMIN_SMS_COMPLETED'])) ? esc_attr($input['ADMIN_SMS_COMPLETED']) : '';
-		$options['ADMIN_SMS_CANCELLED'] = (isset($input['ADMIN_SMS_CANCELLED']) && !empty($input['ADMIN_SMS_CANCELLED'])) ? esc_attr($input['ADMIN_SMS_CANCELLED']) : '';
+		$options['ADMIN_STATUS_SMS'] = (isset($input['ADMIN_STATUS_SMS']) && !empty($input['ADMIN_STATUS_SMS'])) ? esc_attr($input['ADMIN_STATUS_SMS']) : '';
 
 		return $options;
 	}

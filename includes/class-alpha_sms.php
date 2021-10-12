@@ -207,12 +207,14 @@ class Alpha_sms
 			$this->loader->add_action('login_enqueue_scripts', $plugin_public, 'login_enqueue_script');
 			// add otp form to login page
 			$this->loader->add_action('login_form', $plugin_public, 'add_otp_field_in_wp_login_form');
+
 		}
 
 
 		if ($this->options['wc_login']){
 			// add otp form to login page in Woocommerce
 			$this->loader->add_action('woocommerce_login_form', $plugin_public, 'add_otp_field_in_wc_login_form');
+
 		}
 
 		if ($this->options['wp_login'] || $this->options['wc_login']) {
@@ -223,19 +225,15 @@ class Alpha_sms
 			// login user based on otp
 			$this->loader->add_filter('authenticate', $plugin_public,'login_user', 30, 3);
 
-			// add action type in the login forms
-			$this->loader->add_action('login_form', $plugin_public, 'add_action_type_in_wp_login');
-			$this->loader->add_action('woocommerce_login_form', $plugin_public, 'add_action_type_in_wc_login');
-
 		}
 
 		/* WordPress Reg Phone OTP */
 		if ($this->options['wp_reg']){
 			// Display a field in Registration Form
 			$this->loader->add_action('register_form', $plugin_public, 'wp_phone_on_register');
-			$this->loader->add_action('register_form', $plugin_public, 'add_otp_field_on_reg_form');
+			$this->loader->add_action('register_form', $plugin_public, 'add_otp_field_on_wp_reg_form');
 			// Add validation. In this case, we make sure phone is required.
-			$this->loader->add_filter( 'registration_errors', $plugin_public,'register_form_validation', 10, 3 );
+			$this->loader->add_filter( 'registration_errors', $plugin_public,'wp_register_form_validation', 10, 3 );
 			// Finally, save our extra registration user meta.
 			$this->loader->add_action( 'user_register', $plugin_public, 'register_the_customer' );
 		}
@@ -245,9 +243,9 @@ class Alpha_sms
 			// Display a field in Registration Form / Edit account
 			$this->loader->add_action('woocommerce_register_form_start', $plugin_public, 'wc_phone_on_register');
 			$this->loader->add_action('woocommerce_edit_account_form_start', $plugin_public, 'wc_phone_on_register');
-			$this->loader->add_action('woocommerce_register_form', $plugin_public, 'add_otp_field_on_reg_form');
+			$this->loader->add_action('woocommerce_register_form', $plugin_public, 'add_otp_field_on_wc_reg_form');
 			// registration Field validation
-			$this->loader->add_filter( 'woocommerce_registration_errors', $plugin_public,'register_form_validation' ,10, 3 );
+			$this->loader->add_filter( 'woocommerce_registration_errors', $plugin_public,'wc_register_form_validation' ,10, 3 );
 			// Save registration Field value
 			$this->loader->add_action( 'woocommerce_created_customer', $plugin_public, 'register_the_customer' );
 			// Save Field value in Edit account

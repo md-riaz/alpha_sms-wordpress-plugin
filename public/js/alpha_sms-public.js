@@ -9,13 +9,16 @@ $(function () {
    form = $('form.woocommerce-form-login.login');
    wc_reg_form = $('form.woocommerce-form.woocommerce-form-register.register');
    alert_wrapper = $('.woocommerce-notices-wrapper');
-   checkout_otp = $('#alpha_sms-otp_checkout');
+   checkout_otp = $('#alpha_sms_otp_checkout');
    // Perform AJAX login on form submit
-   if ($('#alpha_sms-otp').length) {
+   if ($('#alpha_sms_otp').length) {
       form.find(':submit').on('click', WC_Login_SendOtp);
    }
 
-   wc_reg_form.find(':submit').on('click', WC_Reg_SendOtp);
+   if ($('#alpha_sms_otp_reg').length) {
+      wc_reg_form.find(':submit').on('click', WC_Reg_SendOtp);
+   }
+
 
    if (checkout_otp.length) {
       checkout_form = $('form.checkout.woocommerce-checkout');
@@ -67,7 +70,7 @@ function WC_Login_SendOtp(e) {
       function (resp) {
          if (resp.status === 200) {
             form.find(':submit').off('click');
-            $('#alpha_sms-otp').fadeIn();
+            $('#alpha_sms_otp').fadeIn();
             form
                .find(
                   '.woocommerce-form-row.woocommerce-form-row--wide.form-row.form-row-wide'
@@ -138,11 +141,11 @@ function WC_Reg_SendOtp(e) {
       function (resp) {
          if (resp.status === 200) {
             wc_reg_form.find(':submit').off('click');
-            $('#alpha_sms_otp_reg').fadeIn();
+            $('#alpha_sms_otp_reg').fadeIn().prevAll().hide();
             alert_wrapper.html(showSuccess(resp.message));
             timer(
                'wc_resend_otp',
-               12,
+               120,
                `<a href="javascript:WC_Reg_SendOtp()">Resend OTP</a>`
             );
          } else {
@@ -209,6 +212,7 @@ function WC_Checkout_SendOtp(e) {
       action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
       billing_phone: checkout_form.find('#billing_phone').val(),
       email: checkout_form.find('#billing_email').val(),
+      action_type: checkout_form.find('#action_type').val()
    };
 
    $.post(
@@ -218,7 +222,7 @@ function WC_Checkout_SendOtp(e) {
          if (resp.status === 200) {
             checkout_form.find('#place_order2').remove();
             checkout_form.find('#place_order').show();
-            $('#alpha_sms-otp_checkout').fadeIn();
+            $('#alpha_sms_otp_checkout').fadeIn();
             checkout_form.prev(alert_wrapper).html(showSuccess(resp.message));
             timer(
                'wc_checkout_resend_otp',

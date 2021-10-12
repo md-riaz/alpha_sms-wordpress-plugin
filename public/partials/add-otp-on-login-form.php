@@ -15,7 +15,7 @@
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
 <?php wp_nonce_field( 'ajax-login-nonce', $this->plugin_name ); ?>
-<div id="alpha_sms-otp" style="display:none;">
+<div id="alpha_sms_otp" style="display:none;">
   <div class="alpha_sms-generate-otp form-row">
     <label for="otp_code" class="d-inline-block">OTP Code</label>
     <div id="resend_otp" class="float-right"></div>
