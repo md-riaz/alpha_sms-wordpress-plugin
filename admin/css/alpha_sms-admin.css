@@ -116,8 +116,19 @@ ol.switches {
 
 #order_status_admin,
 #order_status_buyer {
-   display: none;
+   overflow: hidden;
+   opacity: 0;
+   user-select: none;
+   max-height: 0;
+   transition: max-height 0.3s ease-out;
 }
+
+#alpha_sms-order_status_buyer:checked ~ #order_status_buyer,#alpha_sms-order_status_admin:checked ~ #order_status_admin{
+   opacity: 1;
+   user-select: auto;
+   max-height: 250px;
+}
+
 .sms_tokens span {
    color: #3858e9;
    color: var(--pmr_clr);

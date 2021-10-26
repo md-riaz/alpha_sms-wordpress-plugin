@@ -7,7 +7,7 @@ class AlphaSMS
     public $body;
     public $sender_id = '';
     private $api_key;
-    private $api_url = 'https://api.dev.alpha.net.bd';
+    private $api_url = 'https://api.dev.alpha.net.bd'; //TODO change this api key
 
     public function __construct($api_key)
     {

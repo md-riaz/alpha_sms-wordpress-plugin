@@ -29,7 +29,4 @@
     * practising this, we should strive to set a better example in our own work.
     */
 
-   $(document).on('click', '.toggle_visible', (e) => {
-      $('#' + $(e.target).data('visible')).slideToggle();
-   });
 })(jQuery);
