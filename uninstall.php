@@ -31,7 +31,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 // Delete All Options from this plugin alpha_sms
-delete_option($this->plugin_name);
+delete_option('alpha_sms');
 
 // drop a custom database table
 global $wpdb;
