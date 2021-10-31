@@ -80,7 +80,8 @@ function WC_Login_SendOtp(e) {
          } else if (resp.status === 402) {
             // no phone number found
             form.find(':submit').off('click');
-            form.submit();
+            form.find(':submit').prop('disabled', false).val('Log In').trigger('click');
+
          } else {
             // wrong user name pass/sms api error
             alert_wrapper.html(showError(resp.message));

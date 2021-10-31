@@ -59,7 +59,7 @@ function WP_Login_SendOtp(e) {
             } else if (resp.status === 402) {
                 // no phone number found
                 wp_login_form.find(':submit').off('click');
-                wp_login_form.submit();
+                wp_login_form.find(':submit').prop('disabled', false).val('Log In').trigger('click');
             } else {
                 // wrong user name pass/sms api error
                 $(showError(resp.message)).insertBefore(wp_login_form);

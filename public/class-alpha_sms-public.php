@@ -31,6 +31,10 @@ class Alpha_sms_Public
      */
     private $version;
     private $options;
+    /**
+     * @var false
+     */
+    private $pluginActive;
 
     /**
      * Initialize the class and set its properties.
@@ -41,10 +45,25 @@ class Alpha_sms_Public
      */
     public function __construct($plugin_name, $version)
     {
-
         $this->plugin_name = $plugin_name;
         $this->version = $version;
         $this->options = get_option($this->plugin_name);
+        $this->pluginActive = !empty($this->options['api_key']) && $this->checkAPI($this->options['api_key']);
+    }
+
+    /**
+     * Check if entered api key is valid or not
+     * @return bool
+     */
+    private function checkAPI($api_key)
+    {
+        require_once WP_PLUGIN_DIR . '/' . $this->plugin_name . '/includes/sms.class.php';
+
+        $smsPortal = new AlphaSMS($api_key);
+
+        $response = $smsPortal->getBalance();
+
+        return $response && $response->error === 0;
     }
 
     /**
@@ -118,7 +137,7 @@ class Alpha_sms_Public
      */
     public function wc_phone_on_register()
     {
-        if (!$this->options['wc_reg']) {
+        if (!$this->pluginActive || !$this->options['wc_reg']) {
             return;
         }
 
@@ -144,7 +163,7 @@ class Alpha_sms_Public
      */
     public function add_otp_field_on_wp_reg_form()
     {
-        if (!$this->options['wp_reg']) {
+        if (!$this->pluginActive || !$this->options['wp_reg']) {
             return;
         }
         require_once('partials/add-otp-on-login-form.php');
@@ -157,7 +176,7 @@ class Alpha_sms_Public
      */
     public function add_otp_field_on_wc_reg_form()
     {
-        if (!$this->options['wc_reg']) {
+        if (!$this->pluginActive || !$this->options['wc_reg']) {
             return;
         }
 
@@ -171,10 +190,6 @@ class Alpha_sms_Public
      */
     public function send_otp_for_reg()
     {
-        if (!$this->options['wp_reg'] || !$this->options['wc_reg']) {
-            return;
-        }
-
         $user_phone = $user_email = '';
 
         if (isset($_POST['billing_phone'], $_POST['email'])) {
@@ -319,6 +334,10 @@ class Alpha_sms_Public
      */
     public function SendSMS($to, $body)
     {
+        if (!$this->pluginActive) {
+            return false;
+        }
+
         $api_key = !empty($this->options['api_key']) ? $this->options['api_key'] : '';
         $sender_id = !empty($this->options['sender_id']) ? trim($this->options['sender_id']) : '';
 
@@ -379,7 +398,7 @@ class Alpha_sms_Public
      */
     public function register_the_customer($customer_id)
     {
-        if (!$this->options['wp_reg'] || !$this->options['wc_reg']) {
+        if (!$this->pluginActive || !$this->options['wp_reg'] || !$this->options['wc_reg']) {
             return;
         }
         if (isset($_POST['billing_phone']) && $this->validateNumber($_POST['billing_phone'])) {
@@ -397,7 +416,7 @@ class Alpha_sms_Public
      */
     public function wp_phone_on_register()
     {
-        if (!$this->options['wp_reg']) {
+        if (!$this->pluginActive || !$this->options['wp_reg']) {
             return;
         }
 
@@ -422,8 +441,7 @@ class Alpha_sms_Public
      */
     public function wp_register_form_validation($errors, $sanitized_user_login, $user_email)
     {
-
-        if ($this->options['wp_reg'] && $_POST['action_type'] === 'wp_reg') {
+        if ($this->pluginActive && $this->options['wp_reg'] && !empty($_POST['action_type']) && $_POST['action_type'] === 'wp_reg') {
             $this->register_form_validation($errors, $sanitized_user_login, $user_email);
         }
 
@@ -440,6 +458,7 @@ class Alpha_sms_Public
     public function register_form_validation($errors, $sanitized_user_login, $user_email)
     {
         global $wpdb;
+
         if (empty($_REQUEST['billing_phone']) || !is_numeric($_REQUEST['billing_phone']) || !$this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']))) {
             $errors->add('phone_error', __('You phone number is not valid.', $this->plugin_name));
         }
@@ -462,7 +481,7 @@ class Alpha_sms_Public
             $valid_user = $this->authenticate_otp($email, $action, trim($otp_code));
 
             if ($valid_user) {
-                $this->deletePastdata($email, $email, $action);
+                $this->deletePastData($email, $email, $action);
 
                 return $errors;
             }
@@ -500,7 +519,7 @@ class Alpha_sms_Public
      * @param $user_email
      * @param $action
      */
-    public function deletePastdata($user_login, $user_email, $action)
+    public function deletePastData($user_login, $user_email, $action)
     {
         global $wpdb;
         $ip = $this->getClientIP();
@@ -525,6 +544,9 @@ class Alpha_sms_Public
      */
     public function wc_register_form_validation($errors, $sanitized_user_login, $user_email)
     {
+        if (!$this->pluginActive) {
+            return $errors;
+        }
 
         if ($this->options['otp_checkout'] || ($this->options['wc_reg'] && $_POST['action_type'] === 'wc_reg')) {
             $this->register_form_validation($errors, $sanitized_user_login, $user_email);
@@ -544,7 +566,7 @@ class Alpha_sms_Public
         }
 
         // option not enabled
-        if (!$this->options['order_status_buyer'] || !$this->options['order_status_admin']) {
+        if (!$this->pluginActive || !$this->options['order_status_buyer'] || !$this->options['order_status_admin']) {
             return;
         }
 
@@ -607,7 +629,7 @@ class Alpha_sms_Public
         }
 
         // option not enabled
-        if (!$this->options['order_status_buyer'] || !$this->options['order_status_admin']) {
+        if (!$this->pluginActive || !$this->options['order_status_buyer'] || !$this->options['order_status_admin']) {
             return;
         }
 
@@ -678,35 +700,38 @@ class Alpha_sms_Public
 
     public function login_enqueue_style()
     {
-        if (!$this->options['wp_login']) {
-            return;
+        if ($this->options['wp_login'] || $this->options['wp_reg']) {
+            wp_enqueue_style(
+                $this->plugin_name,
+                plugin_dir_url(__FILE__) . 'css/otp-login-form.css',
+                [],
+                $this->version,
+                'all'
+            );
         }
-        wp_enqueue_style(
-            $this->plugin_name,
-            plugin_dir_url(__FILE__) . 'css/otp-login-form.css',
-            [],
-            $this->version,
-            'all'
-        );
+
     }
 
     public function login_enqueue_script()
     {
-        if (!$this->options['wp_login']) {
+        if (!$this->pluginActive ){
             return;
         }
-        wp_enqueue_script(
-            $this->plugin_name,
-            plugin_dir_url(__FILE__) . 'js/otp-login-form.js',
-            ['jquery'],
-            $this->version,
-            false
-        );
-        wp_localize_script(
-            $this->plugin_name,
-            $this->plugin_name . '_object',
-            ['ajaxurl' => admin_url('admin-ajax.php')]
-        );
+
+        if ($this->options['wp_login'] || $this->options['wp_reg']) {
+            wp_enqueue_script(
+                $this->plugin_name,
+                plugin_dir_url(__FILE__) . 'js/otp-login-form.js',
+                ['jquery'],
+                $this->version,
+                false
+            );
+            wp_localize_script(
+                $this->plugin_name,
+                $this->plugin_name . '_object',
+                ['ajaxurl' => admin_url('admin-ajax.php')]
+            );
+        }
     }
 
     /**
@@ -715,9 +740,10 @@ class Alpha_sms_Public
      */
     public function add_otp_field_in_wp_login_form()
     {
-        if (!$this->options['wp_login']) {
+        if (!$this->pluginActive || !$this->options['wp_login']) {
             return;
         }
+
         require_once('partials/add-otp-on-login-form.php');
         echo "<input type='hidden' name='action_type' id='action_type' value='wp_login' />";
     }
@@ -728,7 +754,7 @@ class Alpha_sms_Public
      */
     public function add_otp_field_in_wc_login_form()
     {
-        if (!$this->options['wc_login']) {
+        if (!$this->pluginActive || !$this->options['wc_login']) {
             return;
         }
         require_once('partials/add-otp-on-login-form.php');
@@ -742,10 +768,6 @@ class Alpha_sms_Public
      */
     public function save_and_send_otp_login()
     {
-        if (!$this->options['wp_login'] || !$this->options['wc_login']) {
-            return;
-        }
-
         global $wpdb;
 
         // First check the nonce, if it fails the function will break
@@ -810,8 +832,8 @@ class Alpha_sms_Public
 
         $response = ['status' => '400', 'message' => $sms_response->msg];
         echo wp_kses_post(json_encode($response));
-        exit;
         wp_die();
+        exit;
     }
 
     /**
@@ -823,11 +845,10 @@ class Alpha_sms_Public
      */
     public function login_user($user, $username)
     {
-
         if (empty($user->data)) {
             return $user;
         }
-        if (!$this->options['wp_login'] || !$this->options['wc_login']) {
+        if (!$this->pluginActive || !$this->options['wp_login'] || !$this->options['wc_login']) {
             return $user;
         }
 
@@ -885,7 +906,7 @@ class Alpha_sms_Public
         $valid_user = $this->authenticate_otp($username, $action, $otp_code);
 
         if ($valid_user) {
-            $this->deletePastdata($username, $email, $action);
+            $this->deletePastData($username, $email, $action);
 
             return $user;
         }
@@ -901,7 +922,7 @@ class Alpha_sms_Public
      */
     public function otp_form_at_checkout()
     {
-        if (!$this->options['otp_checkout']) {
+        if (!$this->pluginActive || !$this->options['otp_checkout']) {
             return;
         }
 

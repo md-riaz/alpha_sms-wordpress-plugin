@@ -271,18 +271,14 @@ class Alpha_sms
         $this->loader->add_action('woocommerce_save_account_details', $plugin_public, 'register_the_customer');
 
 
-
-            // ajax post path for sending otp in Default WordPress Reg Form or Woocommerce Reg form
-            $this->loader->add_action('wp_ajax_wc_send_otp', $plugin_public, 'send_otp_for_reg');
-            $this->loader->add_action('wp_ajax_nopriv_wc_send_otp', $plugin_public, 'send_otp_for_reg');
-
+        // ajax post path for sending otp in Default WordPress Reg Form or Woocommerce Reg form
+        $this->loader->add_action('wp_ajax_wc_send_otp', $plugin_public, 'send_otp_for_reg');
+        $this->loader->add_action('wp_ajax_nopriv_wc_send_otp', $plugin_public, 'send_otp_for_reg');
 
         // otp for guest checkout
-        if ($this->options['otp_checkout']) {
+        $this->loader->add_action('woocommerce_review_order_before_submit', $plugin_public, 'otp_form_at_checkout');
 
-            $this->loader->add_action('woocommerce_review_order_before_submit', $plugin_public, 'otp_form_at_checkout');
 
-        }
     }
 
     /**

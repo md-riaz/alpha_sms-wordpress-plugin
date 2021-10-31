@@ -28,7 +28,7 @@ class AlphaSMS
 
         $response = $this->curl_get_content($this->api_url . '/sendsms', 'POST', $postFields);
 
-        return json_decode($response, false);
+        return json_decode($response);
 
     }
 
@@ -75,6 +75,6 @@ class AlphaSMS
     {
         $response = $this->curl_get_content($this->api_url . '/user/balance/?api_key=' . $this->api_key);
 
-        return json_decode($response, false);
+        return json_decode($response);
     }
 }

@@ -16,6 +16,8 @@
 if (!defined('WPINC')) {
     die;
 }
+
+$has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
@@ -46,8 +48,12 @@ if (!defined('WPINC')) {
         //Grab all options
         $options = get_option($this->plugin_name);
 
-        $api_key = (isset($options['api_key']) && !empty($options['api_key'])) ? substr_replace(esc_attr($options['api_key']),
-            str_repeat('*', 24), 12, 16) : '';
+        $api_key = (isset($options['api_key']) && !empty($options['api_key'])) ? $options['api_key'] : '';
+
+        if (strlen($api_key) === 40) {
+            $api_key = substr_replace(esc_attr($options['api_key']), str_repeat('*', 24), 12, 16);
+        }
+
         $sender_id = (isset($options['sender_id']) && !empty($options['sender_id'])) ? esc_attr($options['sender_id']) : '';
 
         $wp_reg = (isset($options['wp_reg']) && !empty($options['wp_reg'])) ? 1 : 0;

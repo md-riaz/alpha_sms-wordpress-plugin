@@ -27,18 +27,32 @@ if (!defined('WPINC')) {
     //Grab all options
     $options = get_option($this->plugin_name);
 
-    require_once WP_PLUGIN_DIR . '/' . $this->plugin_name . '/includes/sms.class.php';
 
-    $smsPortal = new AlphaSMS($options['api_key']);
+    echo showBalance($options, $this->plugin_name);
 
-    $response = $smsPortal->getBalance();
 
-    if ($response && $response->error === 0) {
-        echo "<p><strong>Balance:</strong> BDT " . number_format((float)$response->data->balance, 2, '.', '') . "</p>";
-    } elseif ($response && $response->error === 405) {
-        echo "<strong class='text-danger'>Please configure SMS API first.</strong>";
-    } else {
-        echo "<strong class='text-danger'> Unknown Error, failed to fetch balance</strong>";
+    function showBalance($options, $plugin_name)
+    {
+        if (!$options || empty($options['api_key'])) {
+            return "<strong class='text-danger'>Please configure SMS API first.</strong>";
+        }
+
+        require_once WP_PLUGIN_DIR . '/' . $plugin_name . '/includes/sms.class.php';
+
+        $smsPortal = new AlphaSMS($options['api_key']);
+
+        $response = $smsPortal->getBalance();
+
+        if ($response && $response->error === 0) {
+            return "<p><strong>Balance:</strong> BDT " . number_format((float)$response->data->balance, 2, '.',
+                    '') . "</p>";
+        }
+
+        if ($response && $response->error === 405) {
+            return "<strong class='text-danger'>Please configure SMS API first.</strong>";
+        }
+
+        return "<strong class='text-danger'> Unknown Error, failed to fetch balance</strong>";
     }
 
     ?>
