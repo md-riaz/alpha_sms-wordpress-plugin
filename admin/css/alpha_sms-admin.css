@@ -148,3 +148,26 @@ span.dashicons {
 .text-danger {
    color: #b94a48;
 }
+
+.woo-section {
+   display: inline-block;
+   position: relative;
+}
+
+.woo-overlay {
+   position: absolute;
+   z-index: 1;
+   pointer-events: none;
+   height: 100%;
+   width: 100%;
+   top: 0;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   font-size: 2rem;
+}
+.woo-overlay + .switches {
+   filter: blur(3px);
+   pointer-events: none;
+   user-select: none;
+}

@@ -714,7 +714,7 @@ class Alpha_sms_Public
 
     public function login_enqueue_script()
     {
-        if (!$this->pluginActive ){
+        if (!$this->pluginActive) {
             return;
         }
 
@@ -931,4 +931,5 @@ class Alpha_sms_Public
             echo "<input type='hidden' name='action_type' id='action_type' value='wc_checkout' />";
         }
     }
+
 }

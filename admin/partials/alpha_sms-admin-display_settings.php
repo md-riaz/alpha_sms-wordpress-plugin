@@ -166,103 +166,112 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
 
 
         <h3><?php esc_attr_e('Woocommerce', $this->plugin_name); ?></h3>
-        <ol class="switches">
+        <div class="woo-section">
+            <?php
+            if (!$has_woocommerce){
+              echo "<span class='woo-overlay'>Enable Woocommerce Plugin</span>";
+            }
+            ?>
 
-            <li>
-                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-wc_reg"
-                       name="<?php echo $this->plugin_name; ?>[wc_reg]" <?php checked($wc_reg, 1); ?> />
-                <label for="<?php echo $this->plugin_name; ?>-wc_reg">
-                    <span class="toggle_btn"></span>
-                    <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Register Form',
-                            $this->plugin_name); ?></span>
-                </label>
-            </li>
+            <ol class="switches">
 
-            <li>
-                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-wc_login"
-                       name="<?php echo $this->plugin_name; ?>[wc_login]" <?php checked($wc_login, 1); ?> />
-                <label for="<?php echo $this->plugin_name; ?>-wc_login">
-                    <span class="toggle_btn"></span>
-                    <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Login Form',
-                            $this->plugin_name); ?></span>
-                </label>
-            </li>
+                <li>
+                    <input type="checkbox" id="<?php echo $this->plugin_name; ?>-wc_reg"
+                           name="<?php echo $this->plugin_name; ?>[wc_reg]" <?php checked($wc_reg, 1); ?> />
+                    <label for="<?php echo $this->plugin_name; ?>-wc_reg">
+                        <span class="toggle_btn"></span>
+                        <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Register Form',
+                                $this->plugin_name); ?></span>
+                    </label>
+                </li>
 
-            <li>
-                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-otp_checkout"
-                       name="<?php echo $this->plugin_name; ?>[otp_checkout]" <?php checked($otp_checkout, 1); ?> />
-                <label for="<?php echo $this->plugin_name; ?>-otp_checkout">
-                    <span class="toggle_btn"></span>
-                    <span><?php esc_attr_e('OTP Verification For Guest Customer Checkout',
-                            $this->plugin_name); ?></span>
-                </label>
-            </li>
+                <li>
+                    <input type="checkbox" id="<?php echo $this->plugin_name; ?>-wc_login"
+                           name="<?php echo $this->plugin_name; ?>[wc_login]" <?php checked($wc_login, 1); ?> />
+                    <label for="<?php echo $this->plugin_name; ?>-wc_login">
+                        <span class="toggle_btn"></span>
+                        <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Login Form',
+                                $this->plugin_name); ?></span>
+                    </label>
+                </li>
 
-            <li>
-                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-order_status_buyer"
-                       name="<?php echo $this->plugin_name; ?>[order_status_buyer]" <?php checked($order_status_buyer,
-                    1); ?> />
-                <label for="<?php echo $this->plugin_name; ?>-order_status_buyer">
-                    <span class="toggle_btn"></span>
-                    <span><?php esc_attr_e('Notify Customer on Order Status Change', $this->plugin_name); ?></span>
-                </label>
-                <div id="order_status_buyer">
+                <li>
+                    <input type="checkbox" id="<?php echo $this->plugin_name; ?>-otp_checkout"
+                           name="<?php echo $this->plugin_name; ?>[otp_checkout]" <?php checked($otp_checkout, 1); ?> />
+                    <label for="<?php echo $this->plugin_name; ?>-otp_checkout">
+                        <span class="toggle_btn"></span>
+                        <span><?php esc_attr_e('OTP Verification For Guest Customer Checkout',
+                                $this->plugin_name); ?></span>
+                    </label>
+                </li>
 
-                    <fieldset class="notify_template">
-                        <legend>
-                <span class="sms_tokens my-2 d-block"><span>[store_name]</span> | <span>[billing_first_name]</span> |
-                    <span>[order_id]</span> |
-                    <span>[order_status]</span> |
-                    <span>[order_currency]</span> | <span>[order_amount]</span>
-                </span>
-                        </legend>
+                <li>
+                    <input type="checkbox" id="<?php echo $this->plugin_name; ?>-order_status_buyer"
+                           name="<?php echo $this->plugin_name; ?>[order_status_buyer]" <?php checked($order_status_buyer,
+                        1); ?> />
+                    <label for="<?php echo $this->plugin_name; ?>-order_status_buyer">
+                        <span class="toggle_btn"></span>
+                        <span><?php esc_attr_e('Notify Customer on Order Status Change', $this->plugin_name); ?></span>
+                    </label>
+                    <div id="order_status_buyer">
 
-                        <textarea id="<?php echo $this->plugin_name; ?>-buyer_status_sms"
-                                  name="<?php echo $this->plugin_name; ?>[BUYER_STATUS_SMS]" rows="4"
-                                  cols="85"><?php echo $buyer_status_sms; ?>
-            </textarea>
-                    </fieldset>
+                        <fieldset class="notify_template">
+                            <legend>
+                        <span class="sms_tokens my-2 d-block"><span>[store_name]</span> | <span>[billing_first_name]</span> |
+                            <span>[order_id]</span> |
+                            <span>[order_status]</span> |
+                            <span>[order_currency]</span> | <span>[order_amount]</span>
+                        </span>
+                            </legend>
 
-                </div>
-            </li>
+                            <textarea id="<?php echo $this->plugin_name; ?>-buyer_status_sms"
+                                      name="<?php echo $this->plugin_name; ?>[BUYER_STATUS_SMS]" rows="4"
+                                      cols="85"><?php echo $buyer_status_sms; ?>
+                    </textarea>
+                        </fieldset>
 
-            <li>
-                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-order_status_admin"
-                       name="<?php echo $this->plugin_name; ?>[order_status_admin]" <?php checked($order_status_admin,
-                    1); ?> />
-                <label for="<?php echo $this->plugin_name; ?>-order_status_admin">
-                    <span class="toggle_btn"></span>
-                    <span><?php esc_attr_e('Notify Admin on New Order', $this->plugin_name); ?></span>
-                </label>
-                <div id="order_status_admin">
-                    <fieldset class="notify_template">
-                        <legend>
-                            <h4 class="mb-2">
-                                <label for="<?php echo $this->plugin_name; ?>-admin_phones">
-                                    <?php esc_attr_e('Admin Phone Numbers (comma separated)', $this->plugin_name); ?>
-                                </label>
-                            </h4>
-                            <input id="<?php echo $this->plugin_name; ?>-admin_phones"
-                                   name="<?php echo $this->plugin_name; ?>[admin_phones]"
-                                   type="text" size="82"
-                                   class="mb-2"
-                                   value="<?php echo $admin_phones; ?>"/>
-                            <span class="my-2 d-block sms_tokens"><span>[store_name]</span> | <span>[billing_first_name]</span> |
-              <span>[order_id]</span> |
-              <span>[order_status]</span> |
-              <span>[order_currency]</span> | <span>[order_amount]</span>
-            </span>
-                        </legend>
-                        <textarea id="<?php echo $this->plugin_name; ?>-admin_status_sms"
-                                  name="<?php echo $this->plugin_name; ?>[ADMIN_STATUS_SMS]" rows="4"
-                                  cols="85"><?php echo $admin_status_sms; ?>
-            </textarea>
-                    </fieldset>
+                    </div>
+                </li>
 
-                </div>
-            </li>
+                <li>
+                    <input type="checkbox" id="<?php echo $this->plugin_name; ?>-order_status_admin"
+                           name="<?php echo $this->plugin_name; ?>[order_status_admin]" <?php checked($order_status_admin,
+                        1); ?> />
+                    <label for="<?php echo $this->plugin_name; ?>-order_status_admin">
+                        <span class="toggle_btn"></span>
+                        <span><?php esc_attr_e('Notify Admin on New Order', $this->plugin_name); ?></span>
+                    </label>
+                    <div id="order_status_admin">
+                        <fieldset class="notify_template">
+                            <legend>
+                                <h4 class="mb-2">
+                                    <label for="<?php echo $this->plugin_name; ?>-admin_phones">
+                                        <?php esc_attr_e('Admin Phone Numbers (comma separated)',
+                                            $this->plugin_name); ?>
+                                    </label>
+                                </h4>
+                                <input id="<?php echo $this->plugin_name; ?>-admin_phones"
+                                       name="<?php echo $this->plugin_name; ?>[admin_phones]"
+                                       type="text" size="82"
+                                       class="mb-2"
+                                       value="<?php echo $admin_phones; ?>"/>
+                                <span class="my-2 d-block sms_tokens"><span>[store_name]</span> | <span>[billing_first_name]</span> |
+                      <span>[order_id]</span> |
+                      <span>[order_status]</span> |
+                      <span>[order_currency]</span> | <span>[order_amount]</span>
+                    </span>
+                            </legend>
+                            <textarea id="<?php echo $this->plugin_name; ?>-admin_status_sms"
+                                      name="<?php echo $this->plugin_name; ?>[ADMIN_STATUS_SMS]" rows="4"
+                                      cols="85"><?php echo $admin_status_sms; ?>
+                    </textarea>
+                        </fieldset>
 
-        </ol>
+                    </div>
+                </li>
+
+            </ol>
+        </div>
 
         <?php submit_button(__('Save all changes', $this->plugin_name), 'primary', 'submit', true); ?>
     </form>
