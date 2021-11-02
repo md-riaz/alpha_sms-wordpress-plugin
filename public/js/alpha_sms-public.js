@@ -245,7 +245,11 @@ function WC_Checkout_SendOtp(e) {
          $('html,body').animate(
             { scrollTop: checkout_form.offset().top },
             'slow'
-         )
+         ) && checkout_form
+              .find('#place_order2')
+              .prop('disabled', false)
+              .val('Place Order')
+              .text('Place Order')
       );
 }
 
