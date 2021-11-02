@@ -208,7 +208,8 @@ class Alpha_sms_Admin
 
 
         if (!$this->checkAPI($options['api_key'])) {
-            add_settings_error(
+            $options['order_status'] = $options['wp_reg'] = $options['wp_login'] = $options['wc_reg'] = $options['wc_login'] = $options['otp_checkout'] = $options['order_status_buyer'] = $options['order_status_admin'] = 0;
+                add_settings_error(
                 $this->plugin_name, // Slug title of setting
                 $this->plugin_name, // Slug-name , Used as part of 'id' attribute in HTML output.
                 __('Please configure a valid SMS API Key.', $this->plugin_name),

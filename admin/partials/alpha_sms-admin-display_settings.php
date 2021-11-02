@@ -168,9 +168,11 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
         <h3><?php esc_attr_e('Woocommerce', $this->plugin_name); ?></h3>
         <div class="woo-section">
             <?php
-            if (!$has_woocommerce){
-              echo "<span class='woo-overlay'>Enable Woocommerce Plugin</span>";
-            }
+            if (!$has_woocommerce){ ?>
+                <div class="woo-error">
+                    <p>Please enable Woocommerce plugin first.</p>
+                </div>
+            <?php }
             ?>
 
             <ol class="switches">

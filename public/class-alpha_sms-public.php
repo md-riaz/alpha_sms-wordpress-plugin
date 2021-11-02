@@ -804,7 +804,8 @@ class Alpha_sms_Public
             $user_phone = get_user_meta($user_id, 'billing_phone', true);
         }
 
-        if (!$user_phone) {
+        // if user phone number is not valid then login without verification
+        if (!$user_phone || !$this->validateNumber($user_phone)) {
             $response = ['status' => 402, 'message' => __('No phone number found')];
             echo wp_kses_post(json_encode($response));
             wp_die();
@@ -883,7 +884,7 @@ class Alpha_sms_Public
             $user_phone = get_user_meta($user->data->ID, 'billing_phone', true);
         }
 
-        if (!$user_phone) {
+        if (!$user_phone || !$this->validateNumber($user_phone)) {
             return $user;
         }
 
@@ -892,7 +893,7 @@ class Alpha_sms_Public
 
             $error->add(
                 'empty_password',
-                __('<strong>Error</strong>: Wrong username or password!', $this->plugin_name)
+                __('<strong>Error</strong>: Wrong OTP Code!', $this->plugin_name)
             );
 
             return $error;
