@@ -161,17 +161,3 @@ span.dashicons {
 .text-danger {
     color: #b94a48;
 }
-
-.woo-error {
-    background: #fff;
-    border-left: 4px solid var(--pmr_clr);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
-    margin: 15px 0;
-    padding: 1px 12px;
-}
-
-.woo-error + .switches {
-    filter: grayscale(1);
-    pointer-events: none;
-    user-select: none;
-}

@@ -165,15 +165,9 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
         </ol>
 
 
-        <h3><?php esc_attr_e('Woocommerce', $this->plugin_name); ?></h3>
-        <div class="woo-section">
-            <?php
-            if (!$has_woocommerce){ ?>
-                <div class="woo-error">
-                    <p>Please enable Woocommerce plugin first.</p>
-                </div>
-            <?php }
-            ?>
+        <?php
+        if (!$has_woocommerce) { ?>
+            <h3><?php esc_attr_e('Woocommerce', $this->plugin_name); ?></h3>
 
             <ol class="switches">
 
@@ -273,7 +267,8 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                 </li>
 
             </ol>
-        </div>
+        <?php }
+        ?>
 
         <?php submit_button(__('Save all changes', $this->plugin_name), 'primary', 'submit', true); ?>
     </form>
