@@ -11,6 +11,10 @@
  * @package    Alpha_sms
  * @subpackage Alpha_sms/public/partials
  */
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+    die;
+}
 ?>
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->

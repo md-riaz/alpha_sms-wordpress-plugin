@@ -1,5 +1,10 @@
 <?php
 
+// If this file is called directly, abort.
+if (!defined('WPINC')) {
+    die;
+}
+
 class AlphaSMS
 {
 
@@ -26,7 +31,7 @@ class AlphaSMS
             'sender_id' => $this->sender_id
         ];
 
-        $response = $this->curl_get_content($this->api_url . '/sendsms', 'POST', $postFields);
+        $response = $this->sendRequest($this->api_url . '/sendsms', 'POST', $postFields);
 
         return json_decode($response);
 
@@ -38,34 +43,23 @@ class AlphaSMS
      * @param array $postfields
      * @return bool|string
      */
-    private function curl_get_content($url, $method = 'GET', $postfields = [])
+    private function sendRequest($url, $method = 'GET', $postfields = [])
     {
 
-        $curl = curl_init($url);
+        $args = [
+            'method'    => $method,
+            'timeout'   => 45,
+            'sslverify' => false,
+            'body'      => $postfields
+        ];
 
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+        $request = wp_remote_post($url, $args);
 
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        if ($method == 'POST') {
-
-            curl_setopt($curl, CURLOPT_POST, true);
-
-            curl_setopt($curl, CURLOPT_POSTFIELDS, $postfields);
-        }
-
-        $response = curl_exec($curl);
-        $curl_error = curl_errno($curl);
-
-        curl_close($curl);
-
-        if ($curl_error) {
+        if (is_wp_error($request) || wp_remote_retrieve_response_code($request) != 200) {
             return false;
         }
 
-        return $response;
+        return wp_remote_retrieve_body($request);
     }
 
     /**
@@ -73,7 +67,7 @@ class AlphaSMS
      */
     public function getBalance()
     {
-        $response = $this->curl_get_content($this->api_url . '/user/balance/?api_key=' . $this->api_key);
+        $response = $this->sendRequest($this->api_url . '/user/balance/?api_key=' . $this->api_key);
 
         return json_decode($response);
     }

@@ -1,3 +1,10 @@
+<?php
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+    die;
+}
+?>
+
 <div id="alpha_sms_otp_reg" class="mb-3" style="display:none;">
   <div class="alpha_sms-generate-otp form-row">
     <label for="otp_code" class="d-inline-block">OTP Code</label>

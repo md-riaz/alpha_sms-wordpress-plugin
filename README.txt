@@ -41,8 +41,8 @@ WordPress default registration form, WooCommerce registration form, WooCommerce 
 
 == Screenshots ==
 
-1. Alpha SMS settings page.
-2. Alpha SMS campaign form.
+1. Configuration settings for the plugin.
+2. Campaign form for sending bulk sms.
 
 == Changelog ==
 
