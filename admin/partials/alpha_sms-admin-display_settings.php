@@ -166,7 +166,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
 
 
         <?php
-        if (!$has_woocommerce) { ?>
+        if ($has_woocommerce) { ?>
             <h3><?php esc_attr_e('Woocommerce', $this->plugin_name); ?></h3>
 
             <ol class="switches">
