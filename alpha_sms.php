@@ -14,11 +14,11 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Alpha SMS
- * Plugin URI:        https://alpha.net.bd/SMS/
+ * Plugin URI:        https://sms.net.bd/wp-plugin/
  * Description:       WooCommerce SMS Notification. SMS OTP Verification for Registration and Login forms, 2FA Login.
  * Version:           1.0.0
- * Author:            sms.net.bd
- * Author URI:        https://sms.net.bd
+ * Author:            Alpha Net
+ * Author URI:        https://sms.net.bd/
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       alpha_sms
