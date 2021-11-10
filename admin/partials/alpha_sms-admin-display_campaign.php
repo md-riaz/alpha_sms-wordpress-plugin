@@ -20,58 +20,60 @@ if (!defined('WPINC')) {
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
 <div class="wrap">
-    <h2><span class="dashicons dashicons-format-status"></span> <?php esc_attr_e('SMS Campaign', $this->plugin_name); ?>
+    <h2>
+        <span class="dashicons dashicons-format-status"></span> <?php esc_attr_e('SMS Campaign', $this->plugin_name); ?>
     </h2>
 
     <?php
     //Grab all options
     $options = get_option($this->plugin_name);
 
+    $balance = '';
 
-    echo showBalance($options, $this->plugin_name);
-
-
-    function showBalance($options, $plugin_name)
-    {
-        if (!$options || empty($options['api_key'])) {
-            return "<strong class='text-danger'>Please configure SMS API first.</strong>";
-        }
-
-        require_once WP_PLUGIN_DIR . '/' . $plugin_name . '/includes/sms.class.php';
-
-        $smsPortal = new AlphaSMS($options['api_key']);
-
-        $response = $smsPortal->getBalance();
-
-        if ($response && $response->error === 0) {
-            return "<p><strong>Balance:</strong> BDT " . number_format((float)$response->data->balance, 2, '.',
-                    '') . "</p>";
-        }
-
-        if ($response && $response->error === 405) {
-            return "<strong class='text-danger'>Please configure SMS API first.</strong>";
-        }
-
-        return "<strong class='text-danger'> Unknown Error, failed to fetch balance</strong>";
+    if (!$options || empty($options['api_key'])) {
+        $balance = 'Please configure SMS API first.';
     }
 
+    require_once WP_PLUGIN_DIR . '/' . $this->plugin_name . '/includes/sms.class.php';
+
+    $smsPortal = new AlphaSMS($options['api_key']);
+
+    $response = $smsPortal->getBalance();
+
+    if ($response && $response->error === 0) {
+        $balance = $response->data->balance;
+    } elseif ($response && $response->error === 405) {
+        $balance = 'Please configure SMS API first.';
+    } else {
+        $balance = 'Unknown Error, failed to fetch balance';
+    }
     ?>
+
+    <?php if (is_numeric($balance)): ?>
+        <p><strong>Balance:</strong> BDT <?php echo esc_html( number_format((float)$balance, 2, '.', ',') ) ?> </p>
+    <?php else: ?>
+        <strong class='text-danger'><?php echo esc_html( $balance ) ?></strong>
+    <?php endif; ?>
 
     <!--   show notice when form submit -->
     <?php settings_errors(); ?>
 
-    <form method="post" name=" <?php echo $this->plugin_name; ?>"
-          action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-        <input type="hidden" name="action" value="<?php echo $this->plugin_name ?>_campaign">
+    <form method="post" name=" <?php echo esc_attr( $this->plugin_name ); ?>"
+          action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+        <input type="hidden" name="action" value="<?php echo esc_attr( $this->plugin_name . '_campaign' ) ?>">
 
         <!-- Phone Numbers -->
         <fieldset class="mb-2">
             <p class="mb-2"><strong><?php esc_attr_e('Enter Phone Numbers', $this->plugin_name); ?></strong></p>
             <legend class="screen-reader-text">
-                <span><?php esc_attr_e('Enter Phone Numbers', $this->plugin_name); ?></span>
+                <span><?php esc_attr_e( 'Enter Phone Numbers', $this->plugin_name ); ?></span>
             </legend>
-            <textarea class="d-block" id="<?php echo $this->plugin_name; ?>-numbers"
-                      name="<?php echo $this->plugin_name; ?>[numbers]" rows="2" cols="70"></textarea>
+            <textarea
+                    class="d-block"
+                    id="<?php echo esc_attr( $this->plugin_name . '-numbers' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[numbers]' ); ?>"
+                    rows="2"
+                    cols="70"></textarea>
             <small>New Line Separated</small>
         </fieldset>
 
@@ -80,22 +82,26 @@ if (!defined('WPINC')) {
             <legend class="screen-reader-text">
                 <span><?php esc_attr_e('Include all customers', $this->plugin_name); ?></span>
             </legend>
-            <label for="<?php echo $this->plugin_name; ?>-all_users">
-                <input type="checkbox" id="<?php echo $this->plugin_name; ?>-all_users"
-                       name="<?php echo $this->plugin_name; ?>[all_users]" value="1"/>
-                <span><?php esc_attr_e('Include all customers', $this->plugin_name); ?></span>
+            <label for="<?php echo esc_attr( $this->plugin_name . '-all_users' ); ?>">
+                <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-all_users' ); ?>"
+                       name="<?php echo esc_attr( $this->plugin_name . '[all_users]' ); ?>" value="1"/>
+                <span><?php esc_attr_e( 'Include all customers', $this->plugin_name ); ?></span>
             </label>
         </fieldset>
 
         <!-- SMS Body -->
         <fieldset>
-            <p class="mb-2"><strong><?php esc_attr_e(' Enter SMS Content', $this->plugin_name); ?></strong></p>
+            <p class="mb-2"><strong><?php esc_attr_e( 'Enter SMS Content', $this->plugin_name ); ?></strong></p>
             <legend class="screen-reader-text">
-                <span><?php esc_attr_e(' Enter SMS Content', $this->plugin_name); ?></span>
+                <span><?php esc_attr_e( 'Enter SMS Content', $this->plugin_name ); ?></span>
             </legend>
-            <textarea class="d-block" id="<?php echo $this->plugin_name; ?>-body"
-                      name="<?php echo $this->plugin_name; ?>[body]" rows="8" cols="70" required></textarea>
-
+            <textarea
+                    class="d-block"
+                    id="<?php echo esc_attr( $this->plugin_name . '-body' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[body]' ); ?>"
+                    rows="8"
+                    cols="70"
+                    required></textarea>
         </fieldset>
 
 

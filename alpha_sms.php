@@ -15,7 +15,7 @@
  * @wordpress-plugin
  * Plugin Name:       Alpha SMS
  * Plugin URI:        https://sms.net.bd/wp-plugin/
- * Description:       WooCommerce SMS Notification. SMS OTP Verification for Registration and Login forms, 2FA Login.
+ * Description:       WP 2FA Login. SMS OTP Verification for Registration and Login forms, WooCommerce SMS Notification for your shop orders.
  * Version:           1.0.0
  * Author:            Alpha Net
  * Author URI:        https://sms.net.bd/
@@ -43,7 +43,7 @@ try {
 } catch (Exception $e) {
     $date = new DateTime("now");
 }
-define("TIMESTAMP", $date->format('Y-m-d H:i:s'));
+define("ALPHA_SMS_TIMESTAMP", $date->format('Y-m-d H:i:s'));
 
 /**
  * The code that runs during plugin activation.

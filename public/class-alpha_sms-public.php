@@ -1,8 +1,9 @@
 <?php
 // If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
+if (!defined('WPINC')) {
     die;
 }
+
 /**
  * The public-facing functionality of the plugin.
  *
@@ -145,7 +146,7 @@ class Alpha_sms_Public
         }
 
         $user = wp_get_current_user();
-        $value = isset($_POST['billing_phone']) ? esc_attr($_POST['billing_phone']) : $user->billing_phone;
+        $value = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : $user->billing_phone;
         ?>
 
         <p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide">
@@ -153,7 +154,7 @@ class Alpha_sms_Public
             </label>
             <input type="tel" minlength="11" maxlength="11" class="input-text" name="billing_phone"
                    id="reg_billing_phone"
-                   value="<?php echo $value ?>" required/>
+                   value="<?php echo esc_attr($value) ?>" required/>
         </p>
         <div class="clear"></div>
 
@@ -170,7 +171,9 @@ class Alpha_sms_Public
             return;
         }
         require_once('partials/add-otp-on-login-form.php');
-        echo "<input type='hidden' name='action_type' id='action_type' value='wp_reg' />";
+        ?>
+        <input type='hidden' name='action_type' id='action_type' value='wp_reg'/>
+        <?php
     }
 
     /**
@@ -184,7 +187,9 @@ class Alpha_sms_Public
         }
 
         require_once('partials/add-otp-on-wc-reg-form.php');
-        echo "<input type='hidden' name='action_type' id='action_type' value='wc_reg' />";
+        ?>
+        <input type='hidden' name='action_type' id='action_type' value='wc_reg'/>
+        <?php
     }
 
     /**
@@ -377,7 +382,7 @@ class Alpha_sms_Public
     ) {
         global $wpdb;
 
-        $dateTime = new DateTime(TIMESTAMP);
+        $dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
         $dateTime->modify('+2 minutes');
 
         return $wpdb->insert(
@@ -404,7 +409,7 @@ class Alpha_sms_Public
         if (!$this->pluginActive || !$this->options['wp_reg'] || !$this->options['wc_reg']) {
             return;
         }
-        if (isset($_POST['billing_phone']) && $this->validateNumber($_POST['billing_phone'])) {
+        if (isset($_POST['billing_phone']) && $this->validateNumber(sanitize_text_field($_POST['billing_phone']))) {
             update_user_meta(
                 $customer_id,
                 'billing_phone',
@@ -475,8 +480,7 @@ class Alpha_sms_Public
         }
 
         if (!empty($_REQUEST['otp_code'])) {
-
-            $otp_code = $wpdb->_escape($_REQUEST['otp_code']);
+            $otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
             $email = sanitize_email($user_email);
             $action = 'Registration';
@@ -509,7 +513,7 @@ class Alpha_sms_Public
         global $wpdb;
         $ip = $this->getClientIP();
 
-        $passcode = $wpdb->get_var("SELECT passcode FROM `{$wpdb->prefix}alpha_sms_login_register_actions` WHERE `action` = '$action' AND (`user_login` = '$username' OR `user_email` = '$username') AND `ip` = '$ip' AND `datetime` > '" . TIMESTAMP . "' ORDER BY id DESC LIMIT 1");
+        $passcode = $wpdb->get_var("SELECT passcode FROM `{$wpdb->prefix}alpha_sms_login_register_actions` WHERE `action` = '$action' AND (`user_login` = '$username' OR `user_email` = '$username') AND `ip` = '$ip' AND `datetime` > '" . ALPHA_SMS_TIMESTAMP . "' ORDER BY id DESC LIMIT 1");
 
         // check otp is correct or not
         return (!empty($passcode) && $otp_code === $passcode);
@@ -748,7 +752,10 @@ class Alpha_sms_Public
         }
 
         require_once('partials/add-otp-on-login-form.php');
-        echo "<input type='hidden' name='action_type' id='action_type' value='wp_login' />";
+        ?>
+        <input type='hidden' name='action_type' id='action_type' value='wp_login'/>
+        <?php
+
     }
 
     /**
@@ -761,7 +768,9 @@ class Alpha_sms_Public
             return;
         }
         require_once('partials/add-otp-on-login-form.php');
-        echo "<input type='hidden' name='action_type' id='action_type' value='wc_login' />";
+        ?>
+        <input type='hidden' name='action_type' id='action_type' value='wc_login'/>
+        <?php
     }
 
 
@@ -778,9 +787,9 @@ class Alpha_sms_Public
 
         //Nonce is checked, get the POST data and sign user on
         $info = [];
-        $info['user_login'] = $_POST['log'];
-        $info['user_password'] = $_POST['pwd'];
-        $info['remember'] = $_POST['rememberme'];
+        $info['user_login'] = sanitize_text_field($_POST['log']);
+        $info['user_password'] = sanitize_text_field($_POST['pwd']);
+        $info['remember'] = sanitize_text_field($_POST['rememberme']);
 
         $userdata = get_user_by('login', $info['user_login']);
 
@@ -902,8 +911,7 @@ class Alpha_sms_Public
             return $error;
         }
 
-        $otp_code = $wpdb->_escape($_REQUEST['otp_code']);
-
+        $otp_code = sanitize_text_field($_REQUEST['otp_code']);
         $email = $user->data->user_email;
         $action = 'Login';
 
@@ -932,7 +940,9 @@ class Alpha_sms_Public
 
         if (!is_user_logged_in() && get_option('woocommerce_enable_signup_and_login_from_checkout')) {
             require_once('partials/add-otp-checkout-form.php');
-            echo "<input type='hidden' name='action_type' id='action_type' value='wc_checkout' />";
+            ?>
+            <input type='hidden' name='action_type' id='action_type' value='wc_checkout'/>
+            <?php
         }
     }
 
