@@ -44,6 +44,7 @@ try {
     $date = new DateTime("now");
 }
 define("ALPHA_SMS_TIMESTAMP", $date->format('Y-m-d H:i:s'));
+define( 'ALPHA_SMS_PATH', plugin_dir_path( __FILE__ ) );
 
 /**
  * The code that runs during plugin activation.

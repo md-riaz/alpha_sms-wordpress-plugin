@@ -69,22 +69,22 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
         $admin_status_sms = (isset($options['ADMIN_STATUS_SMS']) && !empty($options['ADMIN_STATUS_SMS'])) ? $options['ADMIN_STATUS_SMS'] : $order_alerts['DEFAULT_ADMIN_STATUS_SMS'];
 
         if (!empty($api_key)) {
-            require_once WP_PLUGIN_DIR . '/' . $this->plugin_name . '/includes/sms.class.php';
+
+            require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
 
             $smsPortal = new AlphaSMS($options['api_key']);
 
             $response = $smsPortal->getBalance();
 
             if ($response && $response->error === 0) {
-                $balance = "<strong>Balance:</strong> BDT " . number_format((float)$response->data->balance, 2, '.',
-                        '');
+                $balance = $response->data->balance;
             } elseif ($response && $response->error === 405) {
-                $balance = "<strong class='text-danger'>Authentication Failed. Please enter a valid API Key.</strong>";
+                $balance = 'Authentication Failed. Please enter a valid API Key.';
             } else {
-                $balance = "<strong class='text-danger'>Unknown Error, failed to fetch balance.</strong>";
+                $balance = 'Unknown Error, failed to fetch balance.';
             }
         } else {
-            $balance = "<strong>Don't have an account? <a href='https://alpha.net.bd/SMS/SignUp/'>Register Now</a> (Free SMS Credit after Sign-up).</strong>";
+            $balance = "empty";
         }
 
         settings_fields($this->plugin_name);
@@ -128,7 +128,14 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                 </th>
                 <td>
                      <span id="<?php echo esc_attr( $this->plugin_name . '-balance' ); ?>">
-                         <?php echo esc_html__( $balance ) ?></span>
+                         <?php if ($balance === 'empty') : ?>
+                            <strong>Don't have an account? <a href='https://alpha.net.bd/SMS/SignUp/'>Register Now</a> (Free SMS Credit after Sign-up).</strong>
+                         <?php elseif (is_numeric($balance)) : ?>
+                             <strong>Balance:</strong> BDT <?php echo esc_html( number_format((float)$balance, 2, '.', ',') ) ?>
+                         <?php else : ?>
+                             <strong class="text-danger"><?php echo esc_html($balance); ?></strong>
+                         <?php endif; ?>
+                     </span>
                 </td>
             </tr>
         </table>

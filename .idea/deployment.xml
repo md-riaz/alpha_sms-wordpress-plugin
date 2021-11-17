@@ -5,7 +5,7 @@
       <paths name="wpsms">
         <serverdata>
           <mappings>
-            <mapping deploy="/alpha_sms" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/alpha-sms" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

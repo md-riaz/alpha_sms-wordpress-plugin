@@ -61,7 +61,7 @@ class Alpha_sms_Public
      */
     private function checkAPI($api_key)
     {
-        require_once WP_PLUGIN_DIR . '/' . $this->plugin_name . '/includes/sms.class.php';
+        require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
 
         $smsPortal = new AlphaSMS($api_key);
 
@@ -349,7 +349,7 @@ class Alpha_sms_Public
         $api_key = !empty($this->options['api_key']) ? $this->options['api_key'] : '';
         $sender_id = !empty($this->options['sender_id']) ? trim($this->options['sender_id']) : '';
 
-        require_once plugin_dir_path(__DIR__) . 'includes/sms.class.php';
+        require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
 
         $sms = new AlphaSMS($api_key);
         $sms->numbers = $to;

@@ -234,7 +234,7 @@ class Alpha_sms_Admin
             return false;
         }
 
-        require_once WP_PLUGIN_DIR . '/' . $this->plugin_name . '/includes/sms.class.php';
+        require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
 
         $smsPortal = new AlphaSMS($api_key);
 
@@ -298,7 +298,7 @@ class Alpha_sms_Admin
         // Final Numbers
         $numbers = implode(',', $numbersArr);
 
-        require_once plugin_dir_path(__DIR__) . 'includes/sms.class.php';
+        require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
 
         $sms = new AlphaSMS($api_key);
         $sms->numbers = $numbers;

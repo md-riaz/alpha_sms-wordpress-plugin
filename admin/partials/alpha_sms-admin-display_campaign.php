@@ -32,20 +32,20 @@ if (!defined('WPINC')) {
 
     if (!$options || empty($options['api_key'])) {
         $balance = 'Please configure SMS API first.';
-    }
-
-    require_once WP_PLUGIN_DIR . '/' . $this->plugin_name . '/includes/sms.class.php';
-
-    $smsPortal = new AlphaSMS($options['api_key']);
-
-    $response = $smsPortal->getBalance();
-
-    if ($response && $response->error === 0) {
-        $balance = $response->data->balance;
-    } elseif ($response && $response->error === 405) {
-        $balance = 'Please configure SMS API first.';
     } else {
-        $balance = 'Unknown Error, failed to fetch balance';
+        require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
+
+        $smsPortal = new AlphaSMS($options['api_key']);
+
+        $response = $smsPortal->getBalance();
+
+        if ($response && $response->error === 0) {
+            $balance = $response->data->balance;
+        } elseif ($response && $response->error === 405) {
+            $balance = 'Please configure SMS API first.';
+        } else {
+            $balance = 'Unknown Error, failed to fetch balance';
+        }
     }
     ?>
 
