@@ -6,9 +6,9 @@ let form, wc_reg_form, alert_wrapper, checkout_otp, checkout_form;
 
 // fill variables with appropriate selectors and attach event handlers
 $(function () {
-   form = $('form.woocommerce-form-login.login');
-   wc_reg_form = $('form.woocommerce-form.woocommerce-form-register.register');
-   alert_wrapper = $('.woocommerce-notices-wrapper');
+   form = $('form.woocommerce-form-login.login').eq(0);
+   wc_reg_form = $('form.woocommerce-form.woocommerce-form-register.register').eq(0);
+   alert_wrapper = $('.woocommerce-notices-wrapper').eq(0);
    checkout_otp = $('#alpha_sms_otp_checkout');
    // Perform AJAX login on form submit
    if ($('#alpha_sms_otp').length) {
@@ -112,7 +112,7 @@ function WC_Reg_SendOtp(e) {
    let email = wc_reg_form.find('#reg_email').val();
    let password = wc_reg_form.find('#reg_password').val();
 
-   if (!phone || !email || !password) {
+   if (!phone || !email) {
       alert_wrapper.html(showError('Fill in the required fields.'));
       $('html,body').animate({ scrollTop: 0 }, 'slow');
       return;
@@ -126,10 +126,13 @@ function WC_Reg_SendOtp(e) {
 
    let data = {
       action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
-      billing_phone: wc_reg_form.find('#reg_billing_phone').val(),
-      email: wc_reg_form.find('#reg_email').val(),
-      password: wc_reg_form.find('#reg_password').val(),
+      billing_phone: phone,
+      email: email
    };
+
+   if (password) {
+      data.password = password;
+   }
 
    $.post(
       alpha_sms_object.ajaxurl,
