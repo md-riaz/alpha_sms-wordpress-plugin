@@ -838,8 +838,14 @@ class Alpha_sms_Public
 
         if ($sms_response->error === 0) {
             // save info in database for later verification
-            $this->log_login_register_action($user_id, $user_login, $user_email, $user_phone, $otp_code, $ip, $action);
-            $response = ['status' => 200, 'message' => 'Please enter the verification code sent to your phone.'];
+            $log_info = $this->log_login_register_action($user_id, $user_login, $user_email, $user_phone, $otp_code, $ip, $action);
+
+            if ($log_info) {
+                $response = ['status' => 200, 'message' => 'Please enter the verification code sent to your phone.'];
+            } else {
+                $response = ['status' => 500, 'message' => 'Something went wrong. Please try again.'];
+            }
+
             echo wp_kses_post(json_encode($response));
             exit;
         }
