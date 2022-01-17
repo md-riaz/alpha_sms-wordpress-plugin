@@ -46,5 +46,8 @@ WordPress default registration form, WooCommerce registration form, WooCommerce 
 
 == Changelog ==
 
+= 1.0.1 =
+* fixed woocommerce registration issue.
+
 = 1.0.0 =
 * First version of plugin.

@@ -492,6 +492,7 @@ class Alpha_sms_Public
 
                 return $errors;
             }
+
         }
 
         // otp validation failed or no otp provided
@@ -512,8 +513,8 @@ class Alpha_sms_Public
     {
         global $wpdb;
         $ip = $this->getClientIP();
-
-        $passcode = $wpdb->get_var("SELECT passcode FROM `{$wpdb->prefix}alpha_sms_login_register_actions` WHERE `action` = '$action' AND (`user_login` = '$username' OR `user_email` = '$username') AND `ip` = '$ip' AND `datetime` > '" . ALPHA_SMS_TIMESTAMP . "' ORDER BY id DESC LIMIT 1");
+        $table_name = $wpdb->prefix . 'alpha_sms_login_register_actions';
+        $passcode = $wpdb->get_var("SELECT passcode FROM `{$wpdb->prefix}alpha_sms_login_register_actions` WHERE `action` = '$action' AND (`user_login` = '$username' OR `user_email` = '$username') AND `datetime` > '" . ALPHA_SMS_TIMESTAMP . "' ORDER BY datetime DESC LIMIT 1");
 
         // check otp is correct or not
         return (!empty($passcode) && $otp_code === $passcode);
