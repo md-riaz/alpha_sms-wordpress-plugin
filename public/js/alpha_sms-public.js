@@ -181,7 +181,6 @@ function WC_Checkout_SendOtp(e) {
    let state = checkout_form.find('#billing_state').val();
    let phone = checkout_form.find('#billing_phone').val();
    let email = checkout_form.find('#billing_email').val();
-   let password = checkout_form.find('#account_password').val();
 
    if (
       !firstName ||
@@ -191,8 +190,7 @@ function WC_Checkout_SendOtp(e) {
       !city ||
       !state ||
       !phone ||
-      !email ||
-      !password
+      !email
    ) {
       checkout_form
          .prev(alert_wrapper)
