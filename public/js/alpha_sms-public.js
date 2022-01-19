@@ -2,26 +2,30 @@
 
 window.$ = jQuery;
 
-let form, wc_reg_form, alert_wrapper, checkout_otp, checkout_form;
+let form, wc_reg_form, alert_wrapper, checkout_form, checkout_otp, otp_input, otp_input_reg;
 
 // fill variables with appropriate selectors and attach event handlers
 $(function () {
-   form = $('form.woocommerce-form-login.login').eq(0);
-   wc_reg_form = $('form.woocommerce-form.woocommerce-form-register.register').eq(0);
    alert_wrapper = $('.woocommerce-notices-wrapper').eq(0);
+
    checkout_otp = $('#alpha_sms_otp_checkout');
+   otp_input = $('#alpha_sms_otp');
+   otp_input_reg = $('#alpha_sms_otp_reg');
+
    // Perform AJAX login on form submit
-   if ($('#alpha_sms_otp').length) {
+   if (otp_input.length) {
+      form = otp_input.parent('form.woocommerce-form-login.login');
       form.find(':submit').on('click', WC_Login_SendOtp);
    }
 
-   if ($('#alpha_sms_otp_reg').length) {
+   if (otp_input_reg.length) {
+      wc_reg_form = otp_input_reg.parent('form.woocommerce-form-register.register');
       wc_reg_form.find(':submit').on('click', WC_Reg_SendOtp);
    }
 
 
    if (checkout_otp.length) {
-      checkout_form = $('form.checkout.woocommerce-checkout');
+      checkout_form = checkout_otp.parent('form.checkout.woocommerce-checkout').eq(0);
       $(document).on('click', '#place_order2', WC_Checkout_SendOtp);
    }
 });

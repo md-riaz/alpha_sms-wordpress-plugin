@@ -7,8 +7,8 @@ let wp_login_form, wp_reg_form;
 // fill variables with appropriate selectors and attach event handlers
 $(function () {
     if ($('#alpha_sms_otp').length) {
-        wp_login_form = $('form#loginform');
-        wp_reg_form = $('form#registerform');
+        wp_login_form = $('#alpha_sms_otp').parent('form#loginform').eq(0);
+        wp_reg_form = $('#alpha_sms_otp').parent('form#registerform').eq(0);
         // Perform AJAX login on form submit
         wp_login_form.find(':submit').on('click', WP_Login_SendOtp);
         wp_reg_form.find(':submit').on('click', WP_Reg_SendOtp);
