@@ -14,9 +14,9 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Alpha SMS
- * Plugin URI:        https://sms.net.bd/wp-plugin/
+ * Plugin URI:        https://sms.net.bd/plugins/wordpress
  * Description:       WP 2FA Login. SMS OTP Verification for Registration and Login forms, WooCommerce SMS Notification for your shop orders.
- * Version:           1.0.1
+ * Version:           1.0.3
  * Author:            Alpha Net
  * Author URI:        https://sms.net.bd/
  * License:           GPL-2.0+
@@ -26,7 +26,7 @@
  */
 
 // If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
+if (!defined('WPINC')) {
 	die;
 }
 
@@ -35,23 +35,24 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'ALPHA_SMS_VERSION', '1.0.1' );
+define('ALPHA_SMS_VERSION', '1.0.3');
 
 // plugin constants
 try {
-    $date = new DateTime("now", new DateTimeZone('Asia/Dhaka'));
+	$date = new DateTime("now", new DateTimeZone('Asia/Dhaka'));
 } catch (Exception $e) {
-    $date = new DateTime("now");
+	$date = new DateTime("now");
 }
 define("ALPHA_SMS_TIMESTAMP", $date->format('Y-m-d H:i:s'));
-define( 'ALPHA_SMS_PATH', plugin_dir_path( __FILE__ ) );
+define('ALPHA_SMS_PATH', plugin_dir_path(__FILE__));
 
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-alpha_sms-activator.php
  */
-function activate_alpha_sms() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-alpha_sms-activator.php';
+function activate_alpha_sms()
+{
+	require_once plugin_dir_path(__FILE__) . 'includes/class-alpha_sms-activator.php';
 	Alpha_sms_Activator::activate();
 }
 
@@ -59,19 +60,20 @@ function activate_alpha_sms() {
  * The code that runs during plugin deactivation.
  * This action is documented in includes/class-alpha_sms-deactivator.php
  */
-function deactivate_alpha_sms() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-alpha_sms-deactivator.php';
+function deactivate_alpha_sms()
+{
+	require_once plugin_dir_path(__FILE__) . 'includes/class-alpha_sms-deactivator.php';
 	Alpha_sms_Deactivator::deactivate();
 }
 
-register_activation_hook( __FILE__, 'activate_alpha_sms' );
-register_deactivation_hook( __FILE__, 'deactivate_alpha_sms' );
+register_activation_hook(__FILE__, 'activate_alpha_sms');
+register_deactivation_hook(__FILE__, 'deactivate_alpha_sms');
 
 /**
  * The core plugin class that is used to define internationalization,
  * admin-specific hooks, and public-facing site hooks.
  */
-require plugin_dir_path( __FILE__ ) . 'includes/class-alpha_sms.php';
+require plugin_dir_path(__FILE__) . 'includes/class-alpha_sms.php';
 
 /**
  * Begins execution of the plugin.
@@ -82,10 +84,10 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-alpha_sms.php';
  *
  * @since    1.0.0
  */
-function run_alpha_sms() {
+function run_alpha_sms()
+{
 
 	$plugin = new Alpha_sms();
 	$plugin->run();
-
 }
 run_alpha_sms();

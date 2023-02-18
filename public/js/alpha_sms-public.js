@@ -25,7 +25,7 @@ $(function () {
 
 
    if (checkout_otp.length) {
-      checkout_form = checkout_otp.parent('form.checkout.woocommerce-checkout').eq(0);
+      checkout_form = $('#alpha_sms_otp_checkout').parents('form.checkout.woocommerce-checkout').eq(0);
       $(document).on('click', '#place_order2', WC_Checkout_SendOtp);
    }
 });
