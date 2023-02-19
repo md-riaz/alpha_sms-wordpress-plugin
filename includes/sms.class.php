@@ -24,6 +24,8 @@ class AlphaSMS
      */
     public function Send()
     {
+
+
         $postFields = [
             'api_key'   => $this->api_key,
             'to'        => $this->numbers,
@@ -32,6 +34,10 @@ class AlphaSMS
         ];
 
         $response = $this->sendRequest($this->api_url . '/sendsms', 'POST', $postFields);
+
+
+
+
 
         return json_decode($response);
 

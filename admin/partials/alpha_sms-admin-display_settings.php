@@ -22,27 +22,52 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
 
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
 <div class="wrap">
-    <h2><span class="dashicons dashicons-admin-tools"></span> Alpha SMS <?php esc_attr_e('Options', $this->plugin_name); ?></h2>
+    <h2><span class="dashicons dashicons-admin-tools"></span> Alpha SMS
+        <?php esc_attr_e('Options', $this->plugin_name); ?></h2>
     <p>Here you can set all the options for using the API</p>
 
     <!--   show admin notice when settings are saved-->
     <?php settings_errors(); ?>
 
     <form method="post" name="<?php echo esc_attr($this->plugin_name); ?>" action="options.php"
-          id="<?php echo esc_attr($this->plugin_name); ?>">
+        id="<?php echo esc_attr($this->plugin_name); ?>">
         <?php
-
         $order_alerts =
-            [
-                'DEFAULT_BUYER_STATUS_SMS' => __(
-                    'Thank you for your order [billing_first_name], The status of order #[order_id] with [store_name] is [order_status]',
-                    $this->plugin_name
-                ),
-                'DEFAULT_ADMIN_STATUS_SMS' => __(
-                    '[store_name]: You have a new order #[order_id] for value [order_currency] [order_amount]. Please check your admin dashboard for complete details.',
-                    $this->plugin_name
-                )
-            ];
+        [
+            "DEFAULT_ORDER_STATUS_PENDING_SMS" => __(
+                "[store_name] - Payment required for Order #[order_id]\nYour order #[order_id] at [store_name] is currently pending payment. Please complete payment as soon as possible.",
+                $this->plugin_name
+            ),
+            "DEFAULT_ORDER_STATUS_PROCESSING_SMS" => __(
+                "[store_name] - Order #[order_id] is being processed\nYour order #[order_id] at [store_name] is currently being processed.",
+                $this->plugin_name
+            ),
+            "DEFAULT_ORDER_STATUS_ON_HOLD_SMS" => __(
+                "[store_name] - Order #[order_id] is on hold\nYour order #[order_id] at [store_name] is currently on hold. Our customer service team will be reaching out to you shortly.",
+                $this->plugin_name
+            ),
+            "DEFAULT_ORDER_STATUS_COMPLETED_SMS" => __(
+                "[store_name] - Order #[order_id] has been completed\nYour order #[order_id] at [store_name] has been completed and is on its way to you.",
+                $this->plugin_name
+            ),
+            "DEFAULT_ORDER_STATUS_CANCELLED_SMS" => __(
+                "[store_name] - Order #[order_id] has been cancelled\nYour order #[order_id] at [store_name] has been cancelled. Please contact our customer service team for any questions or concerns.",
+                $this->plugin_name
+            ),
+            "DEFAULT_ORDER_STATUS_REFUNDED_SMS" => __(
+                "[store_name] - Order #[order_id] has been refunded\nYour order #[order_id] at [store_name] has been refunded. Please contact our customer service team for any questions or concerns.",
+                $this->plugin_name
+            ),
+            "DEFAULT_ORDER_STATUS_FAILED_SMS" => __(
+                "[store_name] - Order #[order_id] has failed\nYour order #[order_id] at [store_name] has failed. Please contact our customer service team for any questions or concerns.",
+                $this->plugin_name
+            ),
+            "DEFAULT_ADMIN_STATUS_SMS" => __(
+                "[store_name] - A new order #[order_id] for value [order_currency] [order_amount] has just been placed. Please check your admin dashboard for complete details.",
+                $this->plugin_name
+            )
+
+        ];
 
         //Grab all options
         $options = get_option($this->plugin_name);
@@ -62,11 +87,24 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
         $otp_checkout = (isset($options['otp_checkout']) && !empty($options['otp_checkout'])) ? 1 : 0;
         $admin_phones = (isset($options['admin_phones']) && !empty($options['admin_phones'])) ? esc_attr($options['admin_phones']) : '';
 
-        $order_status_buyer = (isset($options['order_status_buyer']) && !empty($options['order_status_buyer'])) ? 1 : 0;
-        $buyer_status_sms = (isset($options['BUYER_STATUS_SMS']) && !empty($options['BUYER_STATUS_SMS'])) ? $options['BUYER_STATUS_SMS'] : $order_alerts['DEFAULT_BUYER_STATUS_SMS'];
 
-        $order_status_admin = (isset($options['order_status_admin']) && !empty($options['order_status_admin'])) ? 1 : 0;
-        $admin_status_sms = (isset($options['ADMIN_STATUS_SMS']) && !empty($options['ADMIN_STATUS_SMS'])) ? $options['ADMIN_STATUS_SMS'] : $order_alerts['DEFAULT_ADMIN_STATUS_SMS'];
+        $order_status_pending             = (isset($options['order_status_pending']) && !empty($options['order_status_pending'])) ? 1 : 0;
+        $order_status_pending_sms         = (isset($options['ORDER_STATUS_PENDING_SMS']) && !empty($options['ORDER_STATUS_PENDING_SMS'])) ? $options['ORDER_STATUS_PENDING_SMS'] : $order_alerts['DEFAULT_ORDER_STATUS_PENDING_SMS'];
+        $order_status_processing          = (isset($options['order_status_processing']) && !empty($options['order_status_processing'])) ? 1 : 0;
+        $order_status_processing_sms      = (isset($options['ORDER_STATUS_PROCESSING_SMS']) && !empty($options['ORDER_STATUS_PROCESSING_SMS'])) ? $options['ORDER_STATUS_PROCESSING_SMS'] : $order_alerts['DEFAULT_ORDER_STATUS_PROCESSING_SMS'];
+        $order_status_on_hold             = (isset($options['order_status_on_hold']) && !empty($options['order_status_on_hold'])) ? 1 : 0;
+        $order_status_on_hold_sms         = (isset($options['ORDER_STATUS_ON_HOLD_SMS']) && !empty($options['ORDER_STATUS_ON_HOLD_SMS'])) ? $options['ORDER_STATUS_ON_HOLD_SMS'] : $order_alerts['DEFAULT_ORDER_STATUS_ON_HOLD_SMS'];
+        $order_status_completed           = (isset($options['order_status_completed']) && !empty($options['order_status_completed'])) ? 1 : 0;
+        $order_status_completed_sms       = (isset($options['ORDER_STATUS_COMPLETED_SMS']) && !empty($options['ORDER_STATUS_COMPLETED_SMS'])) ? $options['ORDER_STATUS_COMPLETED_SMS'] : $order_alerts['DEFAULT_ORDER_STATUS_COMPLETED_SMS'];
+        $order_status_cancelled           = (isset($options['order_status_cancelled']) && !empty($options['order_status_cancelled'])) ? 1 : 0;
+        $order_status_cancelled_sms       = (isset($options['ORDER_STATUS_CANCELLED_SMS']) && !empty($options['ORDER_STATUS_CANCELLED_SMS'])) ? $options['ORDER_STATUS_CANCELLED_SMS'] : $order_alerts['DEFAULT_ORDER_STATUS_CANCELLED_SMS'];
+        $order_status_refunded            = (isset($options['order_status_refunded']) && !empty($options['order_status_refunded'])) ? 1 : 0;
+        $order_status_refunded_sms        = (isset($options['ORDER_STATUS_REFUNDED_SMS']) && !empty($options['ORDER_STATUS_REFUNDED_SMS'])) ? $options['ORDER_STATUS_REFUNDED_SMS'] : $order_alerts['DEFAULT_ORDER_STATUS_REFUNDED_SMS'];
+        $order_status_failed              = (isset($options['order_status_failed']) && !empty($options['order_status_failed'])) ? 1 : 0;
+        $order_status_failed_sms          = (isset($options['ORDER_STATUS_FAILED_SMS']) && !empty($options['ORDER_STATUS_FAILED_SMS'])) ? $options['ORDER_STATUS_FAILED_SMS'] : $order_alerts['DEFAULT_ORDER_STATUS_FAILED_SMS'];
+        $order_status_admin               = (isset($options['order_status_admin']) && !empty($options['order_status_admin'])) ? 1 : 0;
+        $admin_status_sms                 = (isset($options['ADMIN_STATUS_SMS']) && !empty($options['ADMIN_STATUS_SMS'])) ? $options['ADMIN_STATUS_SMS'] : $order_alerts['DEFAULT_ADMIN_STATUS_SMS'];
+
 
         if (!empty($api_key)) {
 
@@ -101,10 +139,9 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                 </th>
                 <td>
                     <input id="<?php echo esc_attr( $this->plugin_name . '-api_key' ); ?>"
-                           name="<?php echo esc_attr( $this->plugin_name . '[api_key]' ); ?>"
-                           type="text" size="55"
-                           placeholder="Enter API Key"
-                           value="<?php if ( !empty($api_key) ) { echo esc_attr($api_key); } ?>" />
+                        name="<?php echo esc_attr( $this->plugin_name . '[api_key]' ); ?>" type="text" size="55"
+                        placeholder="Enter API Key"
+                        value="<?php if ( !empty($api_key) ) { echo esc_attr($api_key); } ?>" />
                 </td>
             </tr>
 
@@ -116,9 +153,8 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                 </th>
                 <td>
                     <input id="<?php echo esc_attr( $this->plugin_name . '-sender_id' ); ?>"
-                           name="<?php echo esc_attr( $this->plugin_name . '[sender_id]' ); ?>"
-                           type="text" size="55"
-                           value="<?php esc_attr_e( $sender_id, $this->plugin_name ); ?>"/>
+                        name="<?php echo esc_attr( $this->plugin_name . '[sender_id]' ); ?>" type="text" size="55"
+                        value="<?php esc_attr_e( $sender_id, $this->plugin_name ); ?>" />
                 </td>
             </tr>
 
@@ -127,15 +163,17 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                     <label for="<?php echo esc_attr( $this->plugin_name . '-balance' ); ?>"></label>
                 </th>
                 <td>
-                     <span id="<?php echo esc_attr( $this->plugin_name . '-balance' ); ?>">
-                         <?php if ($balance === 'empty') : ?>
-                            <strong>Don't have an account? <a href='https://alpha.net.bd/SMS/SignUp/'>Register Now</a> (Free SMS Credit after Sign-up).</strong>
-                         <?php elseif (is_numeric($balance)) : ?>
-                             <strong>Balance:</strong> BDT <?php echo esc_html( number_format((float)$balance, 2, '.', ',') ) ?>
-                         <?php else : ?>
-                             <strong class="text-danger"><?php echo esc_html($balance); ?></strong>
-                         <?php endif; ?>
-                     </span>
+                    <span id="<?php echo esc_attr( $this->plugin_name . '-balance' ); ?>">
+                        <?php if ($balance === 'empty') : ?>
+                        <strong>Don't have an account? <a href='https://alpha.net.bd/SMS/SignUp/'>Register Now</a> (Free
+                            SMS Credit after Sign-up).</strong>
+                        <?php elseif (is_numeric($balance)) : ?>
+                        <strong>Balance:</strong> BDT
+                        <?php echo esc_html( number_format((float)$balance, 2, '.', ',') ) ?>
+                        <?php else : ?>
+                        <strong class="text-danger"><?php echo esc_html($balance); ?></strong>
+                        <?php endif; ?>
+                    </span>
                 </td>
             </tr>
         </table>
@@ -146,7 +184,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
         <ol class="switches">
             <li>
                 <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-wp_reg' ); ?>"
-                       name="<?php echo esc_attr( $this->plugin_name . '[wp_reg]' ); ?>" <?php checked($wp_reg, 1); ?> />
+                    name="<?php echo esc_attr( $this->plugin_name . '[wp_reg]' ); ?>" <?php checked($wp_reg, 1); ?> />
                 <label for="<?php echo esc_attr( $this->plugin_name . '-wp_reg' ); ?>">
                     <span class="toggle_btn"></span>
                     <span><?php esc_attr_e('Two Factor OTP Verification For WordPress Register Form', $this->plugin_name); ?></span>
@@ -155,7 +193,8 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
 
             <li>
                 <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-wp_login' ); ?>"
-                       name="<?php echo esc_attr( $this->plugin_name . '[wp_login]' ); ?>" <?php checked($wp_login, 1); ?> />
+                    name="<?php echo esc_attr( $this->plugin_name . '[wp_login]' ); ?>"
+                    <?php checked($wp_login, 1); ?> />
                 <label for="<?php echo esc_attr( $this->plugin_name . '-wp_login' ); ?>">
                     <span class="toggle_btn"></span>
                     <span><?php esc_attr_e('Two Factor OTP Verification For WordPress Login Form', $this->plugin_name); ?></span>
@@ -167,102 +206,298 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
 
         <?php
         if ($has_woocommerce) { ?>
-            <h3><?php esc_attr_e('Woocommerce', $this->plugin_name); ?></h3>
+        <h3><?php esc_attr_e('Woocommerce', $this->plugin_name); ?></h3>
 
-            <ol class="switches">
-                <li>
-                    <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-wc_reg' ); ?>"
-                           name="<?php echo esc_attr( $this->plugin_name . '[wc_reg]' ); ?>" <?php checked($wc_reg, 1); ?> />
-                    <label for="<?php echo esc_attr( $this->plugin_name . '-wc_reg' ); ?>">
-                        <span class="toggle_btn"></span>
-                        <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Register Form', $this->plugin_name); ?></span>
-                    </label>
-                </li>
+        <ol class="switches">
+            <li>
+                <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-wc_reg' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[wc_reg]' ); ?>" <?php checked($wc_reg, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-wc_reg' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Register Form', $this->plugin_name); ?></span>
+                </label>
+            </li>
 
-                <li>
-                    <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-wc_login' ); ?>"
-                           name="<?php echo esc_attr( $this->plugin_name . '[wc_login]' ); ?>" <?php checked($wc_login, 1); ?> />
-                    <label for="<?php echo esc_attr( $this->plugin_name . '-wc_login' ); ?>">
-                        <span class="toggle_btn"></span>
-                        <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Login Form', $this->plugin_name); ?></span>
-                    </label>
-                </li>
+            <li>
+                <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-wc_login' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[wc_login]' ); ?>"
+                    <?php checked($wc_login, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-wc_login' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('Two Factor OTP Verification For Woocommerce Login Form', $this->plugin_name); ?></span>
+                </label>
+            </li>
 
-                <li>
-                    <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-otp_checkout' ); ?>"
-                           name="<?php echo esc_attr( $this->plugin_name . '[otp_checkout]'); ?>" <?php checked($otp_checkout, 1); ?> />
-                    <label for="<?php echo esc_attr( $this->plugin_name . '-otp_checkout' ); ?>">
-                        <span class="toggle_btn"></span>
-                        <span><?php esc_attr_e('OTP Verification For Guest Customer Checkout', $this->plugin_name); ?></span>
-                    </label>
-                </li>
+            <li>
+                <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-otp_checkout' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[otp_checkout]'); ?>"
+                    <?php checked($otp_checkout, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-otp_checkout' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('OTP Verification For Guest Customer Checkout', $this->plugin_name); ?></span>
+                </label>
+            </li>
 
-                <li>
-                    <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-order_status_buyer' ); ?>"
-                           name="<?php echo esc_attr( $this->plugin_name . '[order_status_buyer]' ); ?>" <?php checked($order_status_buyer, 1); ?> />
-                    <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_buyer' ); ?>">
-                        <span class="toggle_btn"></span>
-                        <span><?php esc_attr_e('Notify Customer on Order Status Change', $this->plugin_name); ?></span>
-                    </label>
-                    <div id="order_status_buyer">
-
-                        <fieldset class="notify_template">
-                            <legend>
-                                <span class="sms_tokens my-2 d-block"><span>[store_name]</span> | <span>[billing_first_name]</span> |
-                                    <span>[order_id]</span> |
-                                    <span>[order_status]</span> |
-                                    <span>[order_currency]</span> | <span>[order_amount]</span>
-                                </span>
-                            </legend>
-
-                            <textarea
-                                    id="<?php echo esc_attr( $this->plugin_name . '-buyer_status_sms' ); ?>"
-                                    name="<?php echo esc_attr( $this->plugin_name . '[BUYER_STATUS_SMS]' ); ?>"
-                                    rows="4"
-                                    cols="85"><?php echo esc_html__($buyer_status_sms); ?></textarea>
-                        </fieldset>
-
-                    </div>
-                </li>
-
-                <li>
-                    <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-order_status_admin' ); ?>"
-                           name="<?php echo esc_attr( $this->plugin_name . '[order_status_admin]' ); ?>" <?php checked($order_status_admin,
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_admin' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_admin]' ); ?>" <?php checked($order_status_admin,
                         1); ?> />
-                    <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_admin' ); ?>">
-                        <span class="toggle_btn"></span>
-                        <span><?php esc_attr_e( 'Notify Admin on New Order', $this->plugin_name ); ?></span>
-                    </label>
-                    <div id="order_status_admin">
-                        <fieldset class="notify_template">
-                            <legend>
-                                <h4 class="mb-2">
-                                    <label for="<?php echo esc_attr( $this->plugin_name . '-admin_phones' ); ?>">
-                                        <?php esc_attr_e('Admin Phone Numbers (comma separated)',
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_admin' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e( 'Notify Admin on New Order', $this->plugin_name ); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_admin">
+                    <fieldset class="notify_template">
+                        <legend>
+                            <h4 class="mb-2">
+                                <label for="<?php echo esc_attr( $this->plugin_name . '-admin_phones' ); ?>">
+                                    <?php esc_attr_e('Admin Phone Numbers (comma separated)',
                                             $this->plugin_name); ?>
-                                    </label>
-                                </h4>
-                                <input id="<?php echo esc_attr( $this->plugin_name . '-admin_phones' ); ?>"
-                                       name="<?php echo esc_attr( $this->plugin_name . '[admin_phones]' ) ; ?>"
-                                       type="text" size="82"
-                                       class="mb-2"
-                                       value="<?php echo esc_attr( $admin_phones ); ?>"/>
-                                <span class="my-2 d-block sms_tokens"><span>[store_name]</span> | <span>[billing_first_name]</span> |
-                                  <span>[order_id]</span> |
-                                  <span>[order_status]</span> |
-                                  <span>[order_currency]</span> | <span>[order_amount]</span>
-                                </span>
-                            </legend>
-                            <textarea id="<<?php echo esc_attr( $this->plugin_name . '-admin_status_sms' ); ?>"
-                                      name="<?php echo esc_attr( $this->plugin_name . '[ADMIN_STATUS_SMS]' ) ; ?>" rows="4"
-                                      cols="85"><?php echo esc_html__( $admin_status_sms ); ?>
-                            </textarea>
-                        </fieldset>
+                                </label>
+                            </h4>
+                            <input id="<?php echo esc_attr( $this->plugin_name . '-admin_phones' ); ?>"
+                                name="<?php echo esc_attr( $this->plugin_name . '[admin_phones]' ) ; ?>" type="text"
+                                size="82" class="mb-2" value="<?php echo esc_attr( $admin_phones ); ?>" />
+                            <span class="my-2 d-block sms_tokens"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+                        <textarea id="<<?php echo esc_attr( $this->plugin_name . '-admin_status_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ADMIN_STATUS_SMS]' ) ; ?>" rows="3"
+                            cols="85"><?php echo esc_html__( $admin_status_sms ); ?></textarea>
+                    </fieldset>
 
-                    </div>
-                </li>
+                </div>
+            </li>
 
-            </ol>
+
+            <!-- working start -->
+
+
+            <h3>Notify Customer</h3>
+
+
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_pending' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_pending]' ); ?>"
+                    <?php checked($order_status_pending, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_pending' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('On Order Pending payment', $this->plugin_name); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_pending">
+
+                    <fieldset class="notify_template">
+                        <legend>
+                            <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status_pending]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+
+                        <textarea id="<?php echo esc_attr( $this->plugin_name . '-order_status_pending_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ORDER_STATUS_PENDING_SMS]' ); ?>" rows="4"
+                            cols="85"><?php echo esc_html__($order_status_pending_sms); ?></textarea>
+                    </fieldset>
+
+                </div>
+            </li>
+
+
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_processing' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_processing]' ); ?>"
+                    <?php checked($order_status_processing, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_processing' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('On Order Processing', $this->plugin_name); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_processing">
+
+                    <fieldset class="notify_template">
+                        <legend>
+                            <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+
+                        <textarea id="<?php echo esc_attr( $this->plugin_name . '-order_status_processing_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ORDER_STATUS_PROCESSING_SMS]' ); ?>"
+                            rows="4" cols="85"><?php echo esc_html__($order_status_processing_sms); ?></textarea>
+                    </fieldset>
+
+                </div>
+            </li>
+
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_on_hold' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_on_hold]' ); ?>"
+                    <?php checked($order_status_on_hold, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_on_hold' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('On Order On hold', $this->plugin_name); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_on_hold">
+
+                    <fieldset class="notify_template">
+                        <legend>
+                            <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+
+                        <textarea id="<?php echo esc_attr( $this->plugin_name . '-order_status_on_hold_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ORDER_STATUS_ON_HOLD_SMS]' ); ?>" rows="4"
+                            cols="85"><?php echo esc_html__($order_status_on_hold_sms); ?></textarea>
+                    </fieldset>
+
+                </div>
+            </li>
+
+
+
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_completed' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_completed]' ); ?>"
+                    <?php checked($order_status_completed, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_completed' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('On Order Completed', $this->plugin_name); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_completed">
+
+                    <fieldset class="notify_template">
+                        <legend>
+                            <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+
+                        <textarea id="<?php echo esc_attr( $this->plugin_name . '-order_status_completed_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ORDER_STATUS_COMPLETED_SMS]' ); ?>"
+                            rows="4" cols="85"><?php echo esc_html__($order_status_completed_sms); ?></textarea>
+                    </fieldset>
+
+                </div>
+            </li>
+
+
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_cancelled' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_cancelled]' ); ?>"
+                    <?php checked($order_status_cancelled, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_cancelled' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('On Order Cancelled', $this->plugin_name); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_cancelled">
+
+                    <fieldset class="notify_template">
+                        <legend>
+                            <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+
+                        <textarea id="<?php echo esc_attr( $this->plugin_name . '-order_status_cancelled_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ORDER_STATUS_CANCELLED_SMS]' ); ?>"
+                            rows="4" cols="85"><?php echo esc_html__($order_status_cancelled_sms); ?></textarea>
+                    </fieldset>
+
+                </div>
+            </li>
+
+
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_refunded' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_refunded]' ); ?>"
+                    <?php checked($order_status_refunded, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_refunded' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('On Order Refunded', $this->plugin_name); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_refunded">
+
+                    <fieldset class="notify_template">
+                        <legend>
+                            <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+
+                        <textarea id="<?php echo esc_attr( $this->plugin_name . '-order_status_refunded_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ORDER_STATUS_REFUNDED_SMS]' ); ?>"
+                            rows="4" cols="85"><?php echo esc_html__($order_status_refunded_sms); ?></textarea>
+                    </fieldset>
+
+                </div>
+            </li>
+
+
+
+            <li>
+                <input class="alpha-collapse" type="checkbox"
+                    id="<?php echo esc_attr( $this->plugin_name . '-order_status_failed' ); ?>"
+                    name="<?php echo esc_attr( $this->plugin_name . '[order_status_failed]' ); ?>"
+                    <?php checked($order_status_failed, 1); ?> />
+                <label for="<?php echo esc_attr( $this->plugin_name . '-order_status_failed' ); ?>">
+                    <span class="toggle_btn"></span>
+                    <span><?php esc_attr_e('On Order Failed', $this->plugin_name); ?></span>
+                </label>
+                <div class="alpha-collapsable" id="order_status_failed">
+
+                    <fieldset class="notify_template">
+                        <legend>
+                            <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
+                                <span>[billing_first_name]</span> |
+                                <span>[order_id]</span> |
+                                <span>[order_status]</span> |
+                                <span>[order_currency]</span> | <span>[order_amount]</span>
+                            </span>
+                        </legend>
+
+                        <textarea id="<?php echo esc_attr( $this->plugin_name . '-order_status_failed_sms' ); ?>"
+                            name="<?php echo esc_attr( $this->plugin_name . '[ORDER_STATUS_FAILED_SMS]' ); ?>" rows="4"
+                            cols="85"><?php echo esc_html__($order_status_failed_sms); ?></textarea>
+                    </fieldset>
+
+                </div>
+            </li>
+
+
+
+            <!-- working end -->
+
+
+
+        </ol>
         <?php }
         ?>
 

@@ -1,6 +1,6 @@
 <?php
 // If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
+if (!defined('WPINC')) {
     die;
 }
 /**
@@ -113,7 +113,7 @@ class Alpha_sms_Admin
      */
     public function display_setting_page()
     {
-        require_once('partials/' . $this->plugin_name . '-admin-display_settings.php');
+        require_once 'partials/' . $this->plugin_name . '-admin-display_settings.php';
     }
 
     /**
@@ -123,7 +123,7 @@ class Alpha_sms_Admin
      */
     public function display_campaign_page()
     {
-        require_once('partials/' . $this->plugin_name . '-admin-display_campaign.php');
+        require_once 'partials/' . $this->plugin_name . '-admin-display_campaign.php';
     }
 
     /**
@@ -177,7 +177,6 @@ class Alpha_sms_Admin
         return array_merge($settings_link, $links);
     }
 
-
     /**
      * Validate fields from admin area plugin settings form ('exopite-lazy-load-xt-admin-display.php')
      * @param mixed $input as field form settings form
@@ -187,8 +186,10 @@ class Alpha_sms_Admin
     {
         $options = get_option($this->plugin_name);
 
-        if (strpos(esc_attr($input['api_key']), str_repeat('*', 24), '12')) {
+        if (!empty($input['api_key']) && strpos(esc_attr($input['api_key']), str_repeat('*', 24), '12')) {
+
             $input['api_key'] = $options['api_key'];
+
         }
 
         $options['api_key'] = (isset($input['api_key']) && !empty($input['api_key'])) ? esc_attr($input['api_key']) : '';
@@ -200,23 +201,48 @@ class Alpha_sms_Admin
         $options['wc_reg'] = (isset($input['wc_reg']) && !empty($input['wc_reg'])) ? 1 : 0;
         $options['wc_login'] = (isset($input['wc_login']) && !empty($input['wc_login'])) ? 1 : 0;
         $options['otp_checkout'] = (isset($input['otp_checkout']) && !empty($input['otp_checkout'])) ? 1 : 0;
-
         $options['admin_phones'] = (isset($input['admin_phones']) && !empty($input['admin_phones'])) ? esc_attr($input['admin_phones']) : '';
 
-        $options['order_status_buyer'] = (isset($input['order_status_buyer']) && !empty($input['order_status_buyer'])) ? 1 : 0;
-        $options['BUYER_STATUS_SMS'] = (isset($input['BUYER_STATUS_SMS']) && !empty($input['BUYER_STATUS_SMS'])) ? esc_attr($input['BUYER_STATUS_SMS']) : '';
-
+        $options['order_status_pending'] = (isset($input['order_status_pending']) && !empty($input['order_status_pending'])) ? 1 : 0;
+        $options['order_status_processing'] = (isset($input['order_status_processing']) && !empty($input['order_status_processing'])) ? 1 : 0;
+        $options['order_status_on_hold'] = (isset($input['order_status_on_hold']) && !empty($input['order_status_on_hold'])) ? 1 : 0;
+        $options['order_status_completed'] = (isset($input['order_status_completed']) && !empty($input['order_status_completed'])) ? 1 : 0;
+        $options['order_status_cancelled'] = (isset($input['order_status_cancelled']) && !empty($input['order_status_cancelled'])) ? 1 : 0;
+        $options['order_status_refunded'] = (isset($input['order_status_refunded']) && !empty($input['order_status_refunded'])) ? 1 : 0;
+        $options['order_status_failed'] = (isset($input['order_status_failed']) && !empty($input['order_status_failed'])) ? 1 : 0;
         $options['order_status_admin'] = (isset($input['order_status_admin']) && !empty($input['order_status_admin'])) ? 1 : 0;
+        
+        $options['ORDER_STATUS_PENDING_SMS'] = (isset($input['ORDER_STATUS_PENDING_SMS']) && !empty($input['ORDER_STATUS_PENDING_SMS'])) ? esc_attr($input['ORDER_STATUS_PENDING_SMS']) : '';
+        $options['ORDER_STATUS_PROCESSING_SMS'] = (isset($input['ORDER_STATUS_PROCESSING_SMS']) && !empty($input['ORDER_STATUS_PROCESSING_SMS'])) ? esc_attr($input['ORDER_STATUS_PROCESSING_SMS']) : '';
+        $options['ORDER_STATUS_ON_HOLD_SMS'] = (isset($input['ORDER_STATUS_ON_HOLD_SMS']) && !empty($input['ORDER_STATUS_ON_HOLD_SMS'])) ? esc_attr($input['ORDER_STATUS_ON_HOLD_SMS']) : '';
+        $options['ORDER_STATUS_COMPLETED_SMS'] = (isset($input['ORDER_STATUS_COMPLETED_SMS']) && !empty($input['ORDER_STATUS_COMPLETED_SMS'])) ? esc_attr($input['ORDER_STATUS_COMPLETED_SMS']) : '';
+        $options['ORDER_STATUS_CANCELLED_SMS'] = (isset($input['ORDER_STATUS_CANCELLED_SMS']) && !empty($input['ORDER_STATUS_CANCELLED_SMS'])) ? esc_attr($input['ORDER_STATUS_CANCELLED_SMS']) : '';
+        $options['ORDER_STATUS_REFUNDED_SMS'] = (isset($input['ORDER_STATUS_REFUNDED_SMS']) && !empty($input['ORDER_STATUS_REFUNDED_SMS'])) ? esc_attr($input['ORDER_STATUS_REFUNDED_SMS']) : '';
+        $options['ORDER_STATUS_FAILED_SMS'] = (isset($input['ORDER_STATUS_FAILED_SMS']) && !empty($input['ORDER_STATUS_FAILED_SMS'])) ? esc_attr($input['ORDER_STATUS_FAILED_SMS']) : '';
         $options['ADMIN_STATUS_SMS'] = (isset($input['ADMIN_STATUS_SMS']) && !empty($input['ADMIN_STATUS_SMS'])) ? esc_attr($input['ADMIN_STATUS_SMS']) : '';
-
-
+       
         if (!$this->checkAPI($options['api_key'])) {
-            $options['order_status'] = $options['wp_reg'] = $options['wp_login'] = $options['wc_reg'] = $options['wc_login'] = $options['otp_checkout'] = $options['order_status_buyer'] = $options['order_status_admin'] = 0;
-                add_settings_error(
+
+            $options['order_status'] =
+            $options['wp_reg'] =
+            $options['wp_login'] =
+            $options['wc_reg'] =
+            $options['wc_login'] =
+            $options['otp_checkout'] =
+            $options['order_status_pending'] =
+            $options['order_status_processing'] =
+            $options['order_status_on_hold'] =
+            $options['order_status_completed'] =
+            $options['order_status_cancelled'] =
+            $options['order_status_refunded'] =
+            $options['order_status_failed'] =
+            $options['order_status_admin'] = 0;
+
+            add_settings_error(
                 $this->plugin_name, // Slug title of setting
                 $this->plugin_name, // Slug-name , Used as part of 'id' attribute in HTML output.
                 __('Please configure a valid SMS API Key.', $this->plugin_name),
-                                    // message text, will be shown inside styled <div> and <p> tags
+                // message text, will be shown inside styled <div> and <p> tags
                 'error' // Message type, controls HTML class. Accepts 'error' or 'updated'.
             );
         }
@@ -234,7 +260,7 @@ class Alpha_sms_Admin
             return false;
         }
 
-        require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
+        require_once ALPHA_SMS_PATH . 'includes/sms.class.php';
 
         $smsPortal = new AlphaSMS($api_key);
 
@@ -298,7 +324,7 @@ class Alpha_sms_Admin
         // Final Numbers
         $numbers = implode(',', $numbersArr);
 
-        require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
+        require_once ALPHA_SMS_PATH . 'includes/sms.class.php';
 
         $sms = new AlphaSMS($api_key);
         $sms->numbers = $numbers;
@@ -340,9 +366,9 @@ class Alpha_sms_Admin
 
         // We add our new notice.
         $notices[] = [
-            "notice"      => $notice,
-            "type"        => $type,
-            "dismissible" => $dismissible_text
+            "notice" => $notice,
+            "type" => $type,
+            "dismissible" => $dismissible_text,
         ];
 
         // Then we update the option with our notices array

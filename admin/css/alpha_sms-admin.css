@@ -124,8 +124,7 @@ ol.switches {
     font-size: 0.875rem;
 }
 
-#order_status_admin,
-#order_status_buyer {
+.alpha-collapsable {
     overflow: hidden;
     opacity: 0;
     user-select: none;
@@ -133,7 +132,7 @@ ol.switches {
     transition: max-height 0.3s ease-out;
 }
 
-#alpha_sms-order_status_buyer:checked ~ #order_status_buyer, #alpha_sms-order_status_admin:checked ~ #order_status_admin {
+.alpha-collapse:checked ~ .alpha-collapsable{
     opacity: 1;
     user-select: auto;
     max-height: 250px;

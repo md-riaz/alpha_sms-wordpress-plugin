@@ -280,8 +280,11 @@ class Alpha_sms
         $this->loader->add_action('wp_ajax_wc_send_otp', $plugin_public, 'send_otp_for_reg');
         $this->loader->add_action('wp_ajax_nopriv_wc_send_otp', $plugin_public, 'send_otp_for_reg');
 
-        // otp for guest checkout
+        // otp for guest checkout form
         $this->loader->add_action('woocommerce_review_order_before_submit', $plugin_public, 'otp_form_at_checkout');
+        
+        // otp validation on guest checkout
+        $this->loader->add_action('woocommerce_checkout_process', $plugin_public, 'validate_guest_checkout_otp');
 
 
     }
