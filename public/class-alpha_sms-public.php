@@ -1,7 +1,7 @@
 <?php
 
 // If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
+if (!defined('WPINC')) {
 	die;
 }
 
@@ -15,7 +15,8 @@ if ( ! defined( 'WPINC' ) ) {
  * @subpackage Alpha_sms/public
  * @author     Alpha Net Developer Team <support@alpha.net.bd>
  */
-class Alpha_sms_Public {
+class Alpha_sms_Public
+{
 
 	/**
 	 * The ID of this plugin.
@@ -48,11 +49,12 @@ class Alpha_sms_Public {
 	 *
 	 * @since    1.0.0
 	 */
-	public function __construct( $plugin_name, $version ) {
+	public function __construct($plugin_name, $version)
+	{
 		$this->plugin_name  = $plugin_name;
 		$this->version      = $version;
-		$this->options      = get_option( $this->plugin_name );
-		$this->pluginActive = ! empty( $this->options['api_key'] ) && $this->checkAPI( $this->options['api_key'] );
+		$this->options      = get_option($this->plugin_name);
+		$this->pluginActive = !empty($this->options['api_key']) && $this->checkAPI($this->options['api_key']);
 	}
 
 	/**
@@ -60,8 +62,9 @@ class Alpha_sms_Public {
 	 * @since 1.0.0
 	 * start session if not started
 	 */
-	public function start_session_wp() {
-		if ( ! session_id() ) {
+	public function start_session_wp()
+	{
+		if (!session_id()) {
 			session_start();
 		}
 	}
@@ -71,7 +74,8 @@ class Alpha_sms_Public {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_styles() {
+	public function enqueue_styles()
+	{
 		/**
 		 * This function is provided for demonstration purposes only.
 		 *
@@ -86,7 +90,7 @@ class Alpha_sms_Public {
 
 		wp_enqueue_style(
 			$this->plugin_name,
-			plugin_dir_url( __FILE__ ) . 'css/alpha_sms-public.css',
+			plugin_dir_url(__FILE__) . 'css/alpha_sms-public.css',
 			[],
 			$this->version,
 			'all'
@@ -98,7 +102,8 @@ class Alpha_sms_Public {
 	 *
 	 * @since    1.0.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts()
+	{
 		/**
 		 * This function is provided for demonstration purposes only.
 		 *
@@ -113,8 +118,8 @@ class Alpha_sms_Public {
 
 		wp_enqueue_script(
 			$this->plugin_name,
-			plugin_dir_url( __FILE__ ) . 'js/alpha_sms-public.js',
-			[ 'jquery' ],
+			plugin_dir_url(__FILE__) . 'js/alpha_sms-public.js',
+			['jquery'],
 			$this->version,
 			false
 		);
@@ -123,7 +128,7 @@ class Alpha_sms_Public {
 		wp_localize_script(
 			$this->plugin_name,
 			$this->plugin_name . '_object',
-			[ 'ajaxurl' => admin_url( 'admin-ajax.php' ) ]
+			['ajaxurl' => admin_url('admin-ajax.php')]
 		);
 	}
 
@@ -131,88 +136,92 @@ class Alpha_sms_Public {
 	 * Woocommerce
 	 * show phone number on register page and my account
 	 */
-	public function wc_phone_on_register() {
-		if ( ! $this->pluginActive || ! $this->options['wc_reg'] ) {
+	public function wc_phone_on_register()
+	{
+		if (!$this->pluginActive || !$this->options['wc_reg']) {
 			return;
 		}
 
 		$user  = wp_get_current_user();
-		$value = isset( $_POST['billing_phone'] ) ? sanitize_text_field( $_POST['billing_phone'] )
+		$value = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone'])
 			: $user->billing_phone;
-		?>
+?>
 
-        <p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide">
-            <label for="reg_billing_phone"><?php _e( 'Phone', 'woocommerce' ); ?> <span class="required">*</span>
-            </label>
-            <input type="tel" minlength="11" maxlength="11" class="input-text" name="billing_phone" id="reg_billing_phone" value="<?php echo esc_attr( $value ) ?>" required/>
-        </p>
-        <div class="clear"></div>
+		<p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide">
+			<label for="reg_billing_phone"><?php _e('Phone', 'woocommerce'); ?> <span class="required">*</span>
+			</label>
+			<input type="tel" minlength="11" maxlength="11" class="input-text" name="billing_phone" id="reg_billing_phone" value="<?php echo esc_attr($value) ?>" required />
+		</p>
+		<div class="clear"></div>
 
-		<?php
+	<?php
 	}
 
 	/**
 	 *  Default WordPress
 	 * show otp form in registration form
 	 */
-	public function add_otp_field_on_wp_reg_form() {
-		if ( ! $this->pluginActive || ! $this->options['wp_reg'] ) {
+	public function add_otp_field_on_wp_reg_form()
+	{
+		if (!$this->pluginActive || !$this->options['wp_reg']) {
 			return;
 		}
 		require_once 'partials/add-otp-on-login-form.php';
-		?>
-        <input type='hidden' name='action_type' id='action_type' value='wp_reg'/>
-		<?php
+	?>
+		<input type='hidden' name='action_type' id='action_type' value='wp_reg' />
+	<?php
 	}
 
 	/**
 	 *  Woocommerce
 	 * show otp form in registration form
 	 */
-	public function add_otp_field_on_wc_reg_form() {
-		if ( ! $this->pluginActive || ! $this->options['wc_reg'] ) {
+	public function add_otp_field_on_wc_reg_form()
+	{
+		if (!$this->pluginActive || !$this->options['wc_reg']) {
 			return;
 		}
 
 		require_once 'partials/add-otp-on-wc-reg-form.php';
-		?>
-        <input type='hidden' name='action_type' id='action_type' value='wc_reg'/>
-		<?php
+	?>
+		<input type='hidden' name='action_type' id='action_type' value='wc_reg' />
+	<?php
 	}
 
 	/**
 	 * Woocommerce + Default WordPress
 	 * ajax otp send on post phone number *
 	 */
-	public function send_otp_for_reg() {
+	public function send_otp_for_reg()
+	{
 		$user_phone = $user_email = '';
 
-		if ( isset( $_POST['billing_phone'], $_POST['email'] ) ) {
-			$user_phone = $this->validateNumber( sanitize_text_field( $_POST['billing_phone'] ) );
-			$user_email = sanitize_text_field( $_POST['email'] );
+		if (isset($_POST['billing_phone'], $_POST['email'])) {
+			$user_phone = $this->validateNumber(sanitize_text_field($_POST['billing_phone']));
+			$user_email = sanitize_text_field($_POST['email']);
 		}
 
-		if ( ! $user_email && ! empty( $_POST['billing_email'] ) ) {
-			$user_email = sanitize_text_field( $_POST['billing_email'] );
+		if (!$user_email && !empty($_POST['billing_email'])) {
+			$user_email = sanitize_text_field($_POST['billing_email']);
 		}
 
-		if ( ! filter_var( $user_email, FILTER_VALIDATE_EMAIL ) ) {
-			$response = [ 'status' => 400, 'message' => __( 'The email address you entered is not valid!' ) ];
-			echo wp_kses_post( json_encode( $response ) );
+		if (!filter_var($user_email, FILTER_VALIDATE_EMAIL)) {
+			$response = ['status' => 400, 'message' => __('The email address you entered is not valid!')];
+			echo wp_kses_post(json_encode($response));
 			wp_die();
 			exit;
 		}
 
-		if ( isset( $_POST['password'] ) && empty( $_POST['password'] ) && strlen( $_POST['password'] ) < 8 ) {
-			$response = [ 'status' => 400, 'message' => __( 'Weak - Please enter a stronger password.' ) ];
-			echo wp_kses_post( json_encode( $response ) );
+		if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
+			$response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.')];
+			echo wp_kses_post(json_encode($response));
 			wp_die();
 			exit;
 		}
 
-		if ( ! $user_phone ) {
-			$response = [ 'status' => 400, 'message' => __( 'The phone number you entered is not valid!' ) ];
-			echo wp_kses_post( json_encode( $response ) );
+		if (!$user_phone) {
+			$response = ['status' => 400, 'message' => __('The phone number you entered is not valid!')];
+			echo wp_kses_post(json_encode($response));
 			wp_die();
 			exit;
 		}
@@ -222,33 +231,33 @@ class Alpha_sms_Public {
 
 		$body = 'Your OTP for ' . get_bloginfo() . ' registration is ' . $otp_code . '. Valid for 2 min. Contact us if you need help.';
 
-		if ( ! empty( $_POST['action_type'] ) && $_POST['action_type'] === 'wc_checkout' ) {
+		if (!empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout') {
 			$body = 'Your OTP for secure order checkout on ' . get_bloginfo() . ' is ' . $otp_code . '. Use it within 2 min to complete the checkout process.';
 		}
 
-		$sms_response = $this->SendSMS( $user_phone, $body );
+		$sms_response = $this->SendSMS($user_phone, $body);
 
-		if ( $sms_response->error === 0 ) {
+		if ($sms_response->error === 0) {
 			// save info in database for later verification
-			if ( $this->log_login_register_action(
+			if ($this->log_login_register_action(
 				$user_phone,
 				$otp_code
-			) ) {
+			)) {
 				$response = [
 					'status'  => 200,
 					'message' => 'A OTP (One Time Passcode) has been sent. Please enter the OTP in the field below to verify your phone.',
 				];
 			} else {
-				$response = [ 'status' => 400, 'message' => __( 'Error occurred while sending OTP. Please try again.' ) ];
+				$response = ['status' => 400, 'message' => __('Error occurred while sending OTP. Please try again.')];
 			}
 
-			echo wp_kses_post( json_encode( $response ) );
+			echo wp_kses_post(json_encode($response));
 			wp_die();
 			exit;
 		}
 
-		$response = [ 'status' => '400', 'message' => __( 'Error occurred while sending OTP. Contact Administrator.' ) ];
-		echo wp_kses_post( json_encode( $response ) );
+		$response = ['status' => '400', 'message' => __('Error occurred while sending OTP. Contact Administrator.')];
+		echo wp_kses_post(json_encode($response));
 		wp_die();
 		exit;
 	}
@@ -260,16 +269,17 @@ class Alpha_sms_Public {
 	 *
 	 * @return false|int|string
 	 */
-	public function validateNumber( $num ) {
-		if ( ! $num ) {
+	public function validateNumber($num)
+	{
+		if (!$num) {
 			return false;
 		}
 
-		$num    = ltrim( trim( $num ), "+88" );
-		$number = '88' . ltrim( $num, "88" );
+		$num    = ltrim(trim($num), "+88");
+		$number = '88' . ltrim($num, "88");
 
-		$ext = [ "88017", "88013", "88016", "88015", "88018", "88019", "88014" ];
-		if ( is_numeric( $number ) && strlen( $number ) === 13 && in_array( substr( $number, 0, 5 ), $ext, true ) ) {
+		$ext = ["88017", "88013", "88016", "88015", "88018", "88019", "88014"];
+		if (is_numeric($number) && strlen($number) === 13 && in_array(substr($number, 0, 5), $ext, true)) {
 			return $number;
 		}
 
@@ -281,11 +291,12 @@ class Alpha_sms_Public {
 	 *
 	 * @return string
 	 */
-	public function generateOTP() {
+	public function generateOTP()
+	{
 		$otp = '';
 
-		for ( $i = 0; $i < 6; $i ++ ) {
-			$otp .= mt_rand( 0, 9 );
+		for ($i = 0; $i < 6; $i++) {
+			$otp .= mt_rand(0, 9);
 		}
 
 		return $otp;
@@ -299,17 +310,18 @@ class Alpha_sms_Public {
 	 *
 	 * @return false|mixed
 	 */
-	public function SendSMS( $to, $body ) {
-		if ( ! $this->pluginActive ) {
+	public function SendSMS($to, $body)
+	{
+		if (!$this->pluginActive) {
 			return false;
 		}
 
-		$api_key   = ! empty( $this->options['api_key'] ) ? $this->options['api_key'] : '';
-		$sender_id = ! empty( $this->options['sender_id'] ) ? trim( $this->options['sender_id'] ) : '';
+		$api_key   = !empty($this->options['api_key']) ? $this->options['api_key'] : '';
+		$sender_id = !empty($this->options['sender_id']) ? trim($this->options['sender_id']) : '';
 
 		require_once ALPHA_SMS_PATH . 'includes/sms.class.php';
 
-		$sms            = new AlphaSMS( $api_key );
+		$sms            = new AlphaSMS($api_key);
 		$sms->numbers   = $to;
 		$sms->body      = $body;
 		$sms->sender_id = $sender_id;
@@ -329,13 +341,13 @@ class Alpha_sms_Public {
 		$mobile_phone,
 		$otp_code
 	) {
-		$dateTime = new DateTime( ALPHA_SMS_TIMESTAMP );
-		$dateTime->modify( '+2 minutes' );
+		$dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
+		$dateTime->modify('+2 minutes');
 
 		$_SESSION['alpha_sms_otp_code'] = $otp_code;
-		$_SESSION['alpha_sms_expires']  = $dateTime->format( 'Y-m-d H:i:s' );
+		$_SESSION['alpha_sms_expires']  = $dateTime->format('Y-m-d H:i:s');
 
-		if ( ! empty( $_SESSION['alpha_sms_otp_code'] ) ) {
+		if (!empty($_SESSION['alpha_sms_otp_code'])) {
 			return true;
 		}
 
@@ -347,15 +359,16 @@ class Alpha_sms_Public {
 	 *
 	 * @param $customer_id
 	 */
-	public function register_the_customer( $customer_id ) {
-		if ( ! $this->pluginActive || ( ! $this->options['wp_reg'] && ! $this->options['wc_reg'] ) ) {
+	public function register_the_customer($customer_id)
+	{
+		if (!$this->pluginActive || (!$this->options['wp_reg'] && !$this->options['wc_reg'])) {
 			return;
 		}
-		if ( isset( $_POST['billing_phone'] ) && $this->validateNumber( sanitize_text_field( $_POST['billing_phone'] ) ) ) {
+		if (isset($_POST['billing_phone']) && $this->validateNumber(sanitize_text_field($_POST['billing_phone']))) {
 			update_user_meta(
 				$customer_id,
 				'billing_phone',
-				sanitize_text_field( $this->validateNumber( $_POST['billing_phone'] ) )
+				sanitize_text_field($this->validateNumber($_POST['billing_phone']))
 			);
 		}
 	}
@@ -364,19 +377,20 @@ class Alpha_sms_Public {
 	 * Default WordPress
 	 * show phone number on register page
 	 */
-	public function wp_phone_on_register() {
-		if ( ! $this->pluginActive || ! $this->options['wp_reg'] ) {
+	public function wp_phone_on_register()
+	{
+		if (!$this->pluginActive || !$this->options['wp_reg']) {
 			return;
 		}
 
-		$billing_phone = ( ! empty( $_POST['billing_phone'] ) ) ? sanitize_text_field( $_POST['billing_phone'] ) : '';
+		$billing_phone = (!empty($_POST['billing_phone'])) ? sanitize_text_field($_POST['billing_phone']) : '';
 
-		?>
-        <p>
-            <label for="billing_phone"><?php _e( 'Phone', $this->plugin_name ) ?><br/>
-                <input type="text" name="billing_phone" id="reg_billing_phone" class="input" value="<?php echo esc_attr( $billing_phone ); ?>" size="25"/></label>
-        </p>
-		<?php
+	?>
+		<p>
+			<label for="billing_phone"><?php _e('Phone', $this->plugin_name) ?><br />
+				<input type="text" name="billing_phone" id="reg_billing_phone" class="input" value="<?php echo esc_attr($billing_phone); ?>" size="25" /></label>
+		</p>
+	<?php
 	}
 
 	/**
@@ -388,12 +402,13 @@ class Alpha_sms_Public {
 	 *
 	 * @return mixed
 	 */
-	public function wp_register_form_validation( $errors, $sanitized_user_login, $user_email ) {
+	public function wp_register_form_validation($errors, $sanitized_user_login, $user_email)
+	{
 		if (
-			$this->pluginActive && $this->options['wp_reg'] && ! empty( $_POST['action_type'] ) &&
+			$this->pluginActive && $this->options['wp_reg'] && !empty($_POST['action_type']) &&
 			$_POST['action_type'] === 'wp_reg'
 		) {
-			$this->register_form_validation( $errors, $sanitized_user_login, $user_email );
+			$this->register_form_validation($errors, $sanitized_user_login, $user_email);
 		}
 
 		return $errors;
@@ -408,36 +423,37 @@ class Alpha_sms_Public {
 	 *
 	 * @return mixed
 	 */
-	public function register_form_validation( $errors, $sanitized_user_login, $user_email ) {
-		
-		$enable_guest_checkout = get_option( 'woocommerce_enable_guest_checkout' );
+	public function register_form_validation($errors, $sanitized_user_login, $user_email)
+	{
+
+		$enable_guest_checkout = get_option('woocommerce_enable_guest_checkout');
 		$enable_guest_checkout = $enable_guest_checkout === 'yes' ? true : false;
 
-		if($enable_guest_checkout){
+		if (!$this->pluginActive || !$this->options['otp_checkout'] || $enable_guest_checkout) {
 			return $errors;
 		}
-		
+
 		if (
-			empty( $_REQUEST['billing_phone'] ) || ! is_numeric( $_REQUEST['billing_phone'] ) ||
-			! $this->validateNumber( sanitize_text_field( $_REQUEST['billing_phone'] ) )
+			empty($_REQUEST['billing_phone']) || !is_numeric($_REQUEST['billing_phone']) ||
+			!$this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']))
 		) {
-			$errors->add( 'phone_error', __( 'You phone number is not valid.', $this->plugin_name ) );
+			$errors->add('phone_error', __('You phone number is not valid.', $this->plugin_name));
 		}
 
-		$billing_phone = $this->validateNumber( sanitize_text_field( $_REQUEST['billing_phone'] ) );
+		$billing_phone = $this->validateNumber(sanitize_text_field($_REQUEST['billing_phone']));
 
-		$hasPhoneNumber = get_users( 'meta_value=' . $billing_phone );
+		$hasPhoneNumber = get_users('meta_value=' . $billing_phone);
 
-		if ( ! empty( $hasPhoneNumber ) ) {
-			$errors->add( 'duplicate_phone_error', __( 'Mobile number is already used!', $this->plugin_name ) );
+		if (!empty($hasPhoneNumber)) {
+			$errors->add('duplicate_phone_error', __('Mobile number is already used!', $this->plugin_name));
 		}
 
-		if ( ! empty( $_REQUEST['otp_code'] ) ) {
-			$otp_code = sanitize_text_field( $_REQUEST['otp_code'] );
+		if (!empty($_REQUEST['otp_code'])) {
+			$otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-			$valid_user = $this->authenticate_otp( trim( $otp_code ) );
+			$valid_user = $this->authenticate_otp(trim($otp_code));
 
-			if ( $valid_user ) {
+			if ($valid_user) {
 				$this->deletePastData();
 
 				return $errors;
@@ -446,11 +462,11 @@ class Alpha_sms_Public {
 
 
 		// otp validation failed or no otp provided
-		$errors->add( 'otp_error', __( 'Invalid OTP entered!', $this->plugin_name ) );
+		$errors->add('otp_error', __('Invalid OTP entered!', $this->plugin_name));
 
 		return $errors;
 	}
-	
+
 	/**
 	 * Validate guest checkout otp
 	 *
@@ -460,30 +476,31 @@ class Alpha_sms_Public {
 	 *
 	 * @return mixed
 	 */
-	public function validate_guest_checkout_otp(){
-		
-		$enable_guest_checkout = get_option( 'woocommerce_enable_guest_checkout' );
+	public function validate_guest_checkout_otp()
+	{
+
+		$enable_guest_checkout = get_option('woocommerce_enable_guest_checkout');
 		$enable_guest_checkout = $enable_guest_checkout === 'yes' ? true : false;
-		
-		if(!$enable_guest_checkout){
+
+		if (!$this->pluginActive || !$this->options['otp_checkout'] || !$enable_guest_checkout) {
 			return;
 		}
-		
-		if ( ! empty( $_REQUEST['otp_code'] ) ) {
-			$otp_code = sanitize_text_field( $_REQUEST['otp_code'] );
 
-			$valid_user = $this->authenticate_otp( trim( $otp_code ) );
+		if (!empty($_REQUEST['otp_code'])) {
+			$otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-			if ( $valid_user ) {
+			$valid_user = $this->authenticate_otp(trim($otp_code));
+
+			if ($valid_user) {
 				$this->deletePastData();
 			} else {
-				wc_add_notice( __( 'Please enter a valid OTP.', 'woocommerce' ), 'error' );
+				wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
 			}
 		} else {
-				wc_add_notice( __( 'Please enter a valid OTP.', 'woocommerce' ), 'error' );
+			wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
 		}
-		
 	}
+
 
 	/**
 	 * Select otp from db and compare
@@ -492,17 +509,17 @@ class Alpha_sms_Public {
 	 *
 	 * @return bool
 	 */
-	public function authenticate_otp( $otp_code ) {
+	public function authenticate_otp($otp_code)
+	{
 
 
-		if ( ! empty( $_SESSION['alpha_sms_otp_code'] ) && ! empty( $_SESSION['alpha_sms_expires'] ) ) {
+		if (!empty($_SESSION['alpha_sms_otp_code']) && !empty($_SESSION['alpha_sms_expires'])) {
 
-			if ( strtotime( $_SESSION['alpha_sms_expires'] ) > strtotime( ALPHA_SMS_TIMESTAMP ) ) {
-				if ( $otp_code === $_SESSION['alpha_sms_otp_code'] ) {
+			if (strtotime($_SESSION['alpha_sms_expires']) > strtotime(ALPHA_SMS_TIMESTAMP)) {
+				if ($otp_code === $_SESSION['alpha_sms_otp_code']) {
 					return true;
 				}
 			}
-
 		}
 
 		return false;
@@ -512,9 +529,10 @@ class Alpha_sms_Public {
 	 * delete db data of current ip address user
 	 *
 	 */
-	public function deletePastData() {
-		if ( isset( $_SESSION['alpha_sms_otp_code'], $_SESSION['alpha_sms_expires'] ) ) {
-			unset( $_SESSION['alpha_sms_otp_code'], $_SESSION['alpha_sms_expires'] );
+	public function deletePastData()
+	{
+		if (isset($_SESSION['alpha_sms_otp_code'], $_SESSION['alpha_sms_expires'])) {
+			unset($_SESSION['alpha_sms_otp_code'], $_SESSION['alpha_sms_expires']);
 		}
 	}
 
@@ -527,13 +545,14 @@ class Alpha_sms_Public {
 	 *
 	 * @return mixed
 	 */
-	public function wc_register_form_validation( $errors, $sanitized_user_login, $user_email ) {
-		if ( ! $this->pluginActive ) {
+	public function wc_register_form_validation($errors, $sanitized_user_login, $user_email)
+	{
+		if (!$this->pluginActive) {
 			return $errors;
 		}
 
-		if ( $this->options['otp_checkout'] || ( $this->options['wc_reg'] && $_POST['action_type'] === 'wc_reg' ) ) {
-			$this->register_form_validation( $errors, $sanitized_user_login, $user_email );
+		if ($this->options['otp_checkout'] || ($this->options['wc_reg'] && $_POST['action_type'] === 'wc_reg')) {
+			$this->register_form_validation($errors, $sanitized_user_login, $user_email);
 		}
 
 		return $errors;
@@ -544,20 +563,23 @@ class Alpha_sms_Public {
 	 *
 	 * @param $order_id
 	 */
-	public function wc_new_order_alert( $order_id ) {
-		if ( ! $order_id ) {
+	public function wc_new_order_alert($order_id)
+	{
+		if (!$order_id) {
 			return;
 		}
+
+		// new order status pending notification for customer
+		$this->wc_order_status_change_alert($order_id, 'pending', 'pending');
 
 		// option not enabled
-		if ( ! $this->pluginActive || ! isset( $this->options['order_status_admin'] ) || ! $this->options['order_status_admin'] ) {
+		if (!$this->pluginActive || !isset($this->options['order_status_admin']) || !$this->options['order_status_admin']) {
 			return;
 		}
 
-		// $this->wc_order_status_change_alert($order_id, 'pending', 'pending');
 
 		// send sms to all admins if enabled
-		$order = new WC_Order( $order_id );
+		$order = new WC_Order($order_id);
 
 		$admin_msg = $this->options['ADMIN_STATUS_SMS'];
 
@@ -568,31 +590,37 @@ class Alpha_sms_Public {
 			'[order_status]',
 			'[order_currency]',
 			'[order_amount]',
+            '[order_date_created]',
+            '[order_date_completed]'
 		];
 
-		$replace = [
-			get_bloginfo(),
-			$order->get_billing_first_name(),
-			$order_id,
-			'pending',
-			$order->get_currency(),
-			$order->get_total(),
-		];
+        $order_created = date( 'd M Y', strtotime( $order->get_date_created() ));
+        $order_completed = !empty($order->get_date_completed()) ? date( 'd M Y', strtotime( $order->get_date_completed() )) : '';
 
-		$admin_msg = str_replace( $search, $replace, $admin_msg );
+        $replace = [
+            get_bloginfo(),
+            $order->get_billing_first_name(),
+            $order_id,
+            'pending',
+            $order->get_currency(),
+            $order->get_total(),
+            $order_created,
+            $order_completed
+        ];
+
+		$admin_msg = str_replace($search, $replace, $admin_msg);
 
 		// if admin phone is not provided then send to all admins
 		$admin_phones[] = $this->options['admin_phones'];
 
-		if ( empty( $admin_phones ) ) {
+		if (empty($admin_phones)) {
 			$admin_phones = $this->admin_phones();
 		}
 
-		if ( ! empty( $admin_phones ) ) {
-			$numbers = implode( ',', $admin_phones );
-			$this->SendSMS( $numbers, $admin_msg );
+		if (!empty($admin_phones)) {
+			$numbers = implode(',', $admin_phones);
+			$this->SendSMS($numbers, $admin_msg);
 		}
-
 	}
 
 	/**
@@ -603,27 +631,28 @@ class Alpha_sms_Public {
 	 * @param $new_status
 	 */
 
-	public function wc_order_status_change_alert( $order_id, $old_status, $new_status ) {
-		if ( ! $order_id ) {
+	public function wc_order_status_change_alert($order_id, $old_status, $new_status)
+	{
+		if (!$order_id) {
 			return;
 		}
 
-		$order = new WC_Order( $order_id );
+		$order = new WC_Order($order_id);
 
 		// Get the Customer billing phone
 		$billing_phone = $order->get_billing_phone();
 
 		//we will send sms
-		$status = str_replace( '-', '_', $order->data['status'] );
+		$status = str_replace('-', '_', $order->data['status']);
 
 		// option not enabled
 		if (
-			! $this->pluginActive || ! isset( $this->options[ 'order_status_' . $status ] ) || ! $this->options[ 'order_status_' . $status ]
+			!$this->pluginActive || !isset($this->options['order_status_' . $status]) || !$this->options['order_status_' . $status]
 		) {
 			return;
 		}
 
-		$buyer_msg = ! empty( $this->options[ 'ORDER_STATUS_' . strtoupper( $status ) . '_SMS' ] ) ? $this->options[ 'ORDER_STATUS_' . strtoupper( $status ) . '_SMS' ] : NULL;
+		$buyer_msg = !empty($this->options['ORDER_STATUS_' . strtoupper($status) . '_SMS']) ? $this->options['ORDER_STATUS_' . strtoupper($status) . '_SMS'] : NULL;
 
 		$search = [
 			'[store_name]',
@@ -632,7 +661,12 @@ class Alpha_sms_Public {
 			'[order_status]',
 			'[order_currency]',
 			'[order_amount]',
+            '[order_date_created]',
+            '[order_date_completed]'
 		];
+
+        $order_created = date( 'd M Y', strtotime( $order->get_date_created() ));
+        $order_completed = !empty($order->get_date_completed()) ? date( 'd M Y', strtotime( $order->get_date_completed() )) : '';
 
 		$replace = [
 			get_bloginfo(),
@@ -641,25 +675,26 @@ class Alpha_sms_Public {
 			$new_status,
 			$order->get_currency(),
 			$order->get_total(),
+            $order_created,
+            $order_completed
 		];
 
-		$buyer_msg = str_replace( $search, $replace, $buyer_msg );
+		$buyer_msg = str_replace($search, $replace, $buyer_msg);
 
-		if ( empty( $buyer_msg ) ) {
-			$order->add_order_note( __( $this->plugin_name . ': Order message not found.', $this->plugin_name ) );
+		if (empty($buyer_msg)) {
+			$order->add_order_note(__($this->plugin_name . ': Order message not found.', $this->plugin_name));
 
 			return;
 		}
 
-		$response = $this->SendSMS( $billing_phone, $buyer_msg );
+		$response = $this->SendSMS($billing_phone, $buyer_msg);
 
-		if ( $response->error === 0 ) {
+		if ($response->error === 0) {
 
-			$order->add_order_note( __( 'Alpha SMS : Notified customer about his order ' . $order->data['status'] . ' status', $this->plugin_name ) );
+			$order->add_order_note(__('Alpha SMS : Notified customer about his order ' . $order->data['status'] . ' status', $this->plugin_name));
 		} else {
-			$order->add_order_note( __( 'Alpha SMS : ' . $response->msg, $this->plugin_name ) );
+			$order->add_order_note(__('Alpha SMS : ' . $response->msg, $this->plugin_name));
 		}
-
 	}
 
 	/**
@@ -667,12 +702,13 @@ class Alpha_sms_Public {
 	 *
 	 * @return array
 	 */
-	public function admin_phones() {
-		$admin_ids = get_users( [ 'fields' => 'ID', 'role' => 'administrator' ] );
+	public function admin_phones()
+	{
+		$admin_ids = get_users(['fields' => 'ID', 'role' => 'administrator']);
 		$numbers   = [];
-		foreach ( $admin_ids as $userid ) {
-			$number = $this->validateNumber( get_user_meta( $userid, 'mobile_phone', true ) );
-			if ( $number ) {
+		foreach ($admin_ids as $userid) {
+			$number = $this->validateNumber(get_user_meta($userid, 'mobile_phone', true));
+			if ($number) {
 				$numbers[] = $number;
 			}
 		}
@@ -685,11 +721,12 @@ class Alpha_sms_Public {
 	 *
 	 */
 
-	public function login_enqueue_style() {
-		if ( $this->options['wp_login'] || $this->options['wp_reg'] ) {
+	public function login_enqueue_style()
+	{
+		if ($this->options['wp_login'] || $this->options['wp_reg']) {
 			wp_enqueue_style(
 				$this->plugin_name,
-				plugin_dir_url( __FILE__ ) . 'css/otp-login-form.css',
+				plugin_dir_url(__FILE__) . 'css/otp-login-form.css',
 				[],
 				$this->version,
 				'all'
@@ -697,23 +734,24 @@ class Alpha_sms_Public {
 		}
 	}
 
-	public function login_enqueue_script() {
-		if ( ! $this->pluginActive ) {
+	public function login_enqueue_script()
+	{
+		if (!$this->pluginActive) {
 			return;
 		}
 
-		if ( $this->options['wp_login'] || $this->options['wp_reg'] ) {
+		if ($this->options['wp_login'] || $this->options['wp_reg']) {
 			wp_enqueue_script(
 				$this->plugin_name,
-				plugin_dir_url( __FILE__ ) . 'js/otp-login-form.js',
-				[ 'jquery' ],
+				plugin_dir_url(__FILE__) . 'js/otp-login-form.js',
+				['jquery'],
 				$this->version,
 				false
 			);
 			wp_localize_script(
 				$this->plugin_name,
 				$this->plugin_name . '_object',
-				[ 'ajaxurl' => admin_url( 'admin-ajax.php' ) ]
+				['ajaxurl' => admin_url('admin-ajax.php')]
 			);
 		}
 	}
@@ -722,28 +760,30 @@ class Alpha_sms_Public {
 	 * Add OTP view in Wp login form
 	 *
 	 */
-	public function add_otp_field_in_wp_login_form() {
-		if ( ! $this->pluginActive || ! $this->options['wp_login'] ) {
+	public function add_otp_field_in_wp_login_form()
+	{
+		if (!$this->pluginActive || !$this->options['wp_login']) {
 			return;
 		}
 
 		require_once 'partials/add-otp-on-login-form.php';
-		?>
-        <input type='hidden' name='action_type' id='action_type' value='wp_login'/>
-		<?php
+	?>
+		<input type='hidden' name='action_type' id='action_type' value='wp_login' />
+	<?php
 	}
 
 	/**
 	 * Add OTP view in Wc login form
 	 *
 	 */
-	public function add_otp_field_in_wc_login_form() {
-		if ( ! $this->pluginActive || ! $this->options['wc_login'] ) {
+	public function add_otp_field_in_wc_login_form()
+	{
+		if (!$this->pluginActive || !$this->options['wc_login']) {
 			return;
 		}
 		require_once 'partials/add-otp-on-login-form.php';
-		?>
-        <input type='hidden' name='action_type' id='action_type' value='wc_login'/>
+	?>
+		<input type='hidden' name='action_type' id='action_type' value='wc_login' />
 		<?php
 	}
 
@@ -751,43 +791,44 @@ class Alpha_sms_Public {
 	 * Verify number and send otp
 	 *
 	 */
-	public function save_and_send_otp_login() {
+	public function save_and_send_otp_login()
+	{
 		// First check the nonce, if it fails the function will break
-		check_ajax_referer( 'ajax-login-nonce', $this->plugin_name );
+		check_ajax_referer('ajax-login-nonce', $this->plugin_name);
 
 		//Nonce is checked, get the POST data and sign user on
 		$info                  = [];
-		$info['user_login']    = sanitize_text_field( $_POST['log'] );
-		$info['user_password'] = sanitize_text_field( $_POST['pwd'] );
-		$info['remember']      = sanitize_text_field( $_POST['rememberme'] );
+		$info['user_login']    = sanitize_text_field($_POST['log']);
+		$info['user_password'] = sanitize_text_field($_POST['pwd']);
+		$info['remember']      = sanitize_text_field($_POST['rememberme']);
 
-		$userdata = get_user_by( 'login', $info['user_login'] );
+		$userdata = get_user_by('login', $info['user_login']);
 
-		if ( ! $userdata ) {
-			$userdata = get_user_by( 'email', $info['user_login'] );
+		if (!$userdata) {
+			$userdata = get_user_by('email', $info['user_login']);
 		}
 		// wp_authenticate()
 		$user_id = $userdata->data->ID;
 
-		$result = wp_check_password( $info['user_password'], $userdata->data->user_pass, $user_id );
+		$result = wp_check_password($info['user_password'], $userdata->data->user_pass, $user_id);
 
-		if ( ! $user_id || ! $result ) {
-			$response = [ 'status' => 401, 'message' => __( 'Wrong username or password!' ) ];
-			echo wp_kses_post( json_encode( $response ) );
+		if (!$user_id || !$result) {
+			$response = ['status' => 401, 'message' => __('Wrong username or password!')];
+			echo wp_kses_post(json_encode($response));
 			wp_die();
 			exit;
 		}
 
-		$user_phone = get_user_meta( $user_id, 'mobile_phone', true );
+		$user_phone = get_user_meta($user_id, 'mobile_phone', true);
 
-		if ( ! $user_phone ) {
-			$user_phone = get_user_meta( $user_id, 'billing_phone', true );
+		if (!$user_phone) {
+			$user_phone = get_user_meta($user_id, 'billing_phone', true);
 		}
 
 		// if user phone number is not valid then login without verification
-		if ( ! $user_phone || ! $this->validateNumber( $user_phone ) ) {
-			$response = [ 'status' => 402, 'message' => __( 'No phone number found' ) ];
-			echo wp_kses_post( json_encode( $response ) );
+		if (!$user_phone || !$this->validateNumber($user_phone)) {
+			$response = ['status' => 402, 'message' => __('No phone number found')];
+			echo wp_kses_post(json_encode($response));
 			wp_die();
 			exit;
 		}
@@ -798,24 +839,24 @@ class Alpha_sms_Public {
 		$number = $user_phone;
 		$body   = 'Your one time password for ' . get_bloginfo() . ' login is ' . $otp_code . ' . Only valid for 2 min.';
 
-		$sms_response = $this->SendSMS( $number, $body );
+		$sms_response = $this->SendSMS($number, $body);
 
-		if ( $sms_response->error === 0 ) {
+		if ($sms_response->error === 0) {
 			// save info in database for later verification
-			$log_info = $this->log_login_register_action( $user_phone, $otp_code );
+			$log_info = $this->log_login_register_action($user_phone, $otp_code);
 
-			if ( $log_info ) {
-				$response = [ 'status' => 200, 'message' => 'Please enter the verification code sent to your phone.' ];
+			if ($log_info) {
+				$response = ['status' => 200, 'message' => 'Please enter the verification code sent to your phone.'];
 			} else {
-				$response = [ 'status' => 500, 'message' => 'Something went wrong. Please try again.' ];
+				$response = ['status' => 500, 'message' => 'Something went wrong. Please try again.'];
 			}
 
-			echo wp_kses_post( json_encode( $response ) );
+			echo wp_kses_post(json_encode($response));
 			exit;
 		}
 
-		$response = [ 'status' => '400', 'message' => 'Error sending Otp Code. Please contact administrator.' ];
-		echo wp_kses_post( json_encode( $response ) );
+		$response = ['status' => '400', 'message' => 'Error sending Otp Code. Please contact administrator.'];
+		echo wp_kses_post(json_encode($response));
 		wp_die();
 		exit;
 	}
@@ -828,27 +869,28 @@ class Alpha_sms_Public {
 	 *
 	 * @return User|WP_Error
 	 */
-	public function login_user( $user, $username ) {
-		if ( empty( $user->data ) ) {
+	public function login_user($user, $username)
+	{
+		if (empty($user->data)) {
 			return $user;
 		}
-		if ( ! $this->pluginActive || ( ! $this->options['wp_login'] && ! $this->options['wc_login'] ) ) {
+		if (!$this->pluginActive || (!$this->options['wp_login'] && !$this->options['wc_login'])) {
 			return $user;
 		}
 
-		if ( empty( $_POST['action_type'] ) ) {
+		if (empty($_POST['action_type'])) {
 			$error = new WP_Error();
 
 			$error->add(
 				'empty_password',
-				__( '<strong>Error</strong>: Authentication Error!', $this->plugin_name )
+				__('<strong>Error</strong>: Authentication Error!', $this->plugin_name)
 			);
 		}
 
-		if ( ( $this->options['wp_login'] && $_POST['action_type'] == 'wp_login' ) ||
-		     ( $this->options['wc_login'] && $_POST['action_type'] == 'wc_login' )
+		if (($this->options['wp_login'] && $_POST['action_type'] == 'wp_login') ||
+			($this->options['wc_login'] && $_POST['action_type'] == 'wc_login')
 		) {
-			return $this->startOTPChallenge( $user, $username );
+			return $this->startOTPChallenge($user, $username);
 		}
 
 		return $user;
@@ -860,33 +902,34 @@ class Alpha_sms_Public {
 	 *
 	 * @return mixed|WP_Error
 	 */
-	public function startOTPChallenge( $user, $username ) {
-		$user_phone = get_user_meta( $user->data->ID, 'mobile_phone', true );
+	public function startOTPChallenge($user, $username)
+	{
+		$user_phone = get_user_meta($user->data->ID, 'mobile_phone', true);
 
-		if ( ! $user_phone ) {
-			$user_phone = get_user_meta( $user->data->ID, 'billing_phone', true );
+		if (!$user_phone) {
+			$user_phone = get_user_meta($user->data->ID, 'billing_phone', true);
 		}
 
-		if ( ! $user_phone || ! $this->validateNumber( $user_phone ) ) {
+		if (!$user_phone || !$this->validateNumber($user_phone)) {
 			return $user;
 		}
 
-		if ( empty( $_REQUEST['otp_code'] ) ) {
+		if (empty($_REQUEST['otp_code'])) {
 			$error = new WP_Error();
 
 			$error->add(
 				'empty_password',
-				__( '<strong>Error</strong>: Wrong OTP Code!', $this->plugin_name )
+				__('<strong>Error</strong>: Wrong OTP Code!', $this->plugin_name)
 			);
 
 			return $error;
 		}
 
-		$otp_code = sanitize_text_field( $_REQUEST['otp_code'] );
+		$otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-		$valid_user = $this->authenticate_otp( $otp_code );
+		$valid_user = $this->authenticate_otp($otp_code);
 
-		if ( $valid_user ) {
+		if ($valid_user) {
 			$this->deletePastData();
 
 			return $user;
@@ -894,23 +937,24 @@ class Alpha_sms_Public {
 
 		return new WP_Error(
 			'invalid_password',
-			__( 'OTP is not valid', $this->plugin_name )
+			__('OTP is not valid', $this->plugin_name)
 		);
 	}
 
 	/**
 	 * Woocommerce otp form in checkout
 	 */
-	public function otp_form_at_checkout() {
-		if ( ! $this->pluginActive || ! $this->options['otp_checkout'] ) {
+	public function otp_form_at_checkout()
+	{
+		if (!$this->pluginActive || !$this->options['otp_checkout']) {
 			return;
 		}
 
-		if ( ! is_user_logged_in()) {
+		if (!is_user_logged_in()) {
 			require_once 'partials/add-otp-checkout-form.php';
-			?>
-            <input type='hidden' name='action_type' id='action_type' value='wc_checkout'/>
-			<?php
+		?>
+			<input type='hidden' name='action_type' id='action_type' value='wc_checkout' />
+<?php
 		}
 	}
 
@@ -919,10 +963,11 @@ class Alpha_sms_Public {
 	 *
 	 * @return bool
 	 */
-	private function checkAPI( $api_key ) {
+	private function checkAPI($api_key)
+	{
 		require_once ALPHA_SMS_PATH . 'includes/sms.class.php';
 
-		$smsPortal = new AlphaSMS( $api_key );
+		$smsPortal = new AlphaSMS($api_key);
 
 		$response = $smsPortal->getBalance();
 
