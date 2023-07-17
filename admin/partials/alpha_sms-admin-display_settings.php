@@ -280,7 +280,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                                 <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
                                     <span>[billing_first_name]</span> |
                                     <span>[order_id]</span> |
-                                    <span>[order_status]</span> |  <span>[order_date_created]</span></span>
+                                    <span>[order_status]</span> |  <span>[order_date_created]</span>
                                     <span>[order_currency]</span> | <span>[order_amount]</span>
                                 </span>
                             </legend>
@@ -305,7 +305,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                                 <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
                                     <span>[billing_first_name]</span> |
                                     <span>[order_id]</span> |
-                                    <span>[order_status]</span> |  <span>[order_date_created]</span></span>
+                                    <span>[order_status]</span> |  <span>[order_date_created]</span>
                                     <span>[order_currency]</span> | <span>[order_amount]</span>
                                 </span>
                             </legend>
@@ -329,7 +329,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                                 <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
                                     <span>[billing_first_name]</span> |
                                     <span>[order_id]</span> |
-                                    <span>[order_status]</span> |  <span>[order_date_created]</span></span>
+                                    <span>[order_status]</span> |  <span>[order_date_created]</span>
                                     <span>[order_currency]</span> | <span>[order_amount]</span>
                                 </span>
                             </legend>
@@ -380,7 +380,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                                 <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
                                     <span>[billing_first_name]</span> |
                                     <span>[order_id]</span> |
-                                    <span>[order_status]</span> |  <span>[order_date_created]</span></span>
+                                    <span>[order_status]</span> |  <span>[order_date_created]</span>
                                     <span>[order_currency]</span> | <span>[order_amount]</span>
                                 </span>
                             </legend>
@@ -405,7 +405,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                                 <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
                                     <span>[billing_first_name]</span> |
                                     <span>[order_id]</span> |
-                                    <span>[order_status]</span> |  <span>[order_date_created]</span></span>
+                                    <span>[order_status]</span> |  <span>[order_date_created]</span>
                                     <span>[order_currency]</span> | <span>[order_amount]</span>
                                 </span>
                             </legend>
@@ -431,7 +431,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                                 <span class="sms_tokens my-2 d-block"><span>[store_name]</span> |
                                     <span>[billing_first_name]</span> |
                                     <span>[order_id]</span> |
-                                    <span>[order_status]</span> |  <span>[order_date_created]</span> |  <span>[order_date_completed]</span> 
+                                    <span>[order_status]</span> |  <span>[order_date_created]</span>
                                     <span>[order_currency]</span> | <span>[order_amount]</span>
                                 </span>
                             </legend>
@@ -442,11 +442,7 @@ $has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                     </div>
                 </li>
 
-
-
                 <!-- working end -->
-
-
 
             </ol>
         <?php }
