@@ -54,10 +54,10 @@ class Alpha_sms_Public
 		$this->plugin_name  = $plugin_name;
 		$this->version      = $version;
 		$this->options      = get_option($this->plugin_name);
-		$this->pluginActive = !empty($this->options['api_key']) && $this->checkAPI($this->options['api_key']);
+		$this->pluginActive = !empty($this->options['api_key']);
 	}
 
-	/**
+		/**
 	 * @return void
 	 * @since 1.0.0
 	 * start session if not started
@@ -69,6 +69,7 @@ class Alpha_sms_Public
 		}
 	}
 
+	
 	/**
 	 * Register the stylesheets for the public-facing side of the site.
 	 *
@@ -194,22 +195,10 @@ class Alpha_sms_Public
 	 */
 	public function send_otp_for_reg()
 	{
-		$user_phone = $user_email = '';
+		$user_phone = '';
 
-		if (isset($_POST['billing_phone'], $_POST['email'])) {
+		if (isset($_POST['billing_phone'])) {
 			$user_phone = $this->validateNumber(sanitize_text_field($_POST['billing_phone']));
-			$user_email = sanitize_text_field($_POST['email']);
-		}
-
-		if (!$user_email && !empty($_POST['billing_email'])) {
-			$user_email = sanitize_text_field($_POST['billing_email']);
-		}
-
-		if (!filter_var($user_email, FILTER_VALIDATE_EMAIL)) {
-			$response = ['status' => 400, 'message' => __('The email address you entered is not valid!')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
 		}
 
 		if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
@@ -225,6 +214,20 @@ class Alpha_sms_Public
 			wp_die();
 			exit;
 		}
+
+		// check for already send otp by checking expiration
+		$otp_expires = WC()->session->get('alpha_sms_expires');
+
+		if (!empty($otp_expires) && strtotime($otp_expires) > strtotime(ALPHA_SMS_TIMESTAMP)) {
+			$response = [
+				'status'  => 400,
+				'message' => 'OTP already sent to a phone number. Please try again after ' . date('i:s', strtotime($otp_expires) - strtotime(ALPHA_SMS_TIMESTAMP) . ' min'),
+			];
+			echo wp_kses_post(json_encode($response));
+			wp_die();
+			exit;
+		}
+
 
 		//we will send sms
 		$otp_code = $this->generateOTP();
@@ -342,12 +345,13 @@ class Alpha_sms_Public
 		$otp_code
 	) {
 		$dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
-		$dateTime->modify('+2 minutes');
+		$dateTime->modify('+3 minutes');
 
-		$_SESSION['alpha_sms_otp_code'] = $otp_code;
-		$_SESSION['alpha_sms_expires']  = $dateTime->format('Y-m-d H:i:s');
+		WC()->session->set('alpha_sms_otp_phone', $mobile_phone);
+		WC()->session->set('alpha_sms_otp_code', $otp_code);
+		WC()->session->set('alpha_sms_expires', $dateTime->format('Y-m-d H:i:s'));
 
-		if (!empty($_SESSION['alpha_sms_otp_code'])) {
+		if(WC()->session->get('alpha_sms_otp_code')) {
 			return true;
 		}
 
@@ -511,12 +515,12 @@ class Alpha_sms_Public
 	 */
 	public function authenticate_otp($otp_code)
 	{
+		$otp_code_session = WC()->session->get('alpha_sms_otp_code');
+		$otp_expires_session = WC()->session->get('alpha_sms_expires');
 
-
-		if (!empty($_SESSION['alpha_sms_otp_code']) && !empty($_SESSION['alpha_sms_expires'])) {
-
-			if (strtotime($_SESSION['alpha_sms_expires']) > strtotime(ALPHA_SMS_TIMESTAMP)) {
-				if ($otp_code === $_SESSION['alpha_sms_otp_code']) {
+		if (!empty($otp_code_session) && !empty($otp_expires_session)) {
+			if (strtotime($otp_expires_session) > strtotime(ALPHA_SMS_TIMESTAMP)) {
+				if ($otp_code === $otp_code_session) {
 					return true;
 				}
 			}
@@ -531,8 +535,9 @@ class Alpha_sms_Public
 	 */
 	public function deletePastData()
 	{
-		if (isset($_SESSION['alpha_sms_otp_code'], $_SESSION['alpha_sms_expires'])) {
-			unset($_SESSION['alpha_sms_otp_code'], $_SESSION['alpha_sms_expires']);
+		if (WC()->session->get('alpha_sms_otp_code') || WC()->session->get('alpha_sms_expires')) {
+			WC()->session->__unset('alpha_sms_otp_code');
+			WC()->session->__unset('alpha_sms_expires');
 		}
 	}
 
@@ -590,23 +595,23 @@ class Alpha_sms_Public
 			'[order_status]',
 			'[order_currency]',
 			'[order_amount]',
-            '[order_date_created]',
-            '[order_date_completed]'
+			'[order_date_created]',
+			'[order_date_completed]'
 		];
 
-        $order_created = date( 'd M Y', strtotime( $order->get_date_created() ));
-        $order_completed = !empty($order->get_date_completed()) ? date( 'd M Y', strtotime( $order->get_date_completed() )) : '';
+		$order_created = date('d M Y', strtotime($order->get_date_created()));
+		$order_completed = !empty($order->get_date_completed()) ? date('d M Y', strtotime($order->get_date_completed())) : '';
 
-        $replace = [
-            get_bloginfo(),
-            $order->get_billing_first_name(),
-            $order_id,
-            'pending',
-            $order->get_currency(),
-            $order->get_total(),
-            $order_created,
-            $order_completed
-        ];
+		$replace = [
+			get_bloginfo(),
+			$order->get_billing_first_name(),
+			$order_id,
+			'pending',
+			$order->get_currency(),
+			$order->get_total(),
+			$order_created,
+			$order_completed
+		];
 
 		$admin_msg = str_replace($search, $replace, $admin_msg);
 
@@ -661,12 +666,12 @@ class Alpha_sms_Public
 			'[order_status]',
 			'[order_currency]',
 			'[order_amount]',
-            '[order_date_created]',
-            '[order_date_completed]'
+			'[order_date_created]',
+			'[order_date_completed]'
 		];
 
-        $order_created = date( 'd M Y', strtotime( $order->get_date_created() ));
-        $order_completed = !empty($order->get_date_completed()) ? date( 'd M Y', strtotime( $order->get_date_completed() )) : '';
+		$order_created = date('d M Y', strtotime($order->get_date_created()));
+		$order_completed = !empty($order->get_date_completed()) ? date('d M Y', strtotime($order->get_date_completed())) : '';
 
 		$replace = [
 			get_bloginfo(),
@@ -675,8 +680,8 @@ class Alpha_sms_Public
 			$new_status,
 			$order->get_currency(),
 			$order->get_total(),
-            $order_created,
-            $order_completed
+			$order_created,
+			$order_completed
 		];
 
 		$buyer_msg = str_replace($search, $replace, $buyer_msg);

@@ -27,6 +27,8 @@ $(function () {
    if (checkout_otp.length) {
       checkout_form = $('#alpha_sms_otp_checkout').parents('form.checkout.woocommerce-checkout').eq(0);
       $(document).on('click', '#place_order2', WC_Checkout_SendOtp);
+
+
    }
 });
 
@@ -177,24 +179,10 @@ function WC_Checkout_SendOtp(e) {
    if (e) e.preventDefault();
    alert_wrapper.html('');
 
-   let firstName = checkout_form.find('#billing_first_name').val();
-   let lastName = checkout_form.find('#billing_last_name').val();
-   let country = checkout_form.find('#billing_country').val();
-   let address = checkout_form.find('#billing_address_1').val();
-   let city = checkout_form.find('#billing_city').val();
-   let state = checkout_form.find('#billing_state').val();
    let phone = checkout_form.find('#billing_phone').val();
-   let email = checkout_form.find('#billing_email').val();
 
    if (
-      !firstName ||
-      !lastName ||
-      !country ||
-      !address ||
-      !city ||
-      !state ||
-      !phone ||
-      !email
+      !phone
    ) {
       checkout_form
          .prev(alert_wrapper)
@@ -212,7 +200,6 @@ function WC_Checkout_SendOtp(e) {
    let data = {
       action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
       billing_phone: checkout_form.find('#billing_phone').val(),
-      email: checkout_form.find('#billing_email').val(),
       action_type: checkout_form.find('#action_type').val()
    };
 
