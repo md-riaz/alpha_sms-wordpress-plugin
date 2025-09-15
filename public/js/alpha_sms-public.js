@@ -26,9 +26,7 @@ $(function () {
 
    if (checkout_otp.length) {
       checkout_form = $('#alpha_sms_otp_checkout').parents('form.checkout.woocommerce-checkout').eq(0);
-      $(document).on('click', '#place_order2', WC_Checkout_SendOtp);
-
-
+      $('#alpha_sms_send_otp').on('click', WC_Checkout_SendOtp);
    }
 });
 
@@ -179,39 +177,32 @@ function WC_Checkout_SendOtp(e) {
    if (e) e.preventDefault();
    alert_wrapper.html('');
 
-   let phone = checkout_form.find('#billing_phone').val();
+   let phone = checkout_form.find(alpha_sms_object.phone_selector).val();
 
    if (
       !phone
    ) {
-      checkout_form
-         .prev(alert_wrapper)
-         .html(showError('Fill in the required fields.'));
+      alert_wrapper.html(showError('Fill in the required fields.'));
       $('html,body').animate({ scrollTop: checkout_form.offset().top }, 'slow');
       return;
    }
 
-   checkout_form
-      .find('#place_order2')
+   $('#alpha_sms_send_otp')
       .prop('disabled', true)
-      .val('Processing')
       .text('Processing');
 
    let data = {
-      action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
-      billing_phone: checkout_form.find('#billing_phone').val(),
+      billing_phone: checkout_form.find(alpha_sms_object.phone_selector).val(),
       action_type: checkout_form.find('#action_type').val()
    };
 
    $.post(
-      alpha_sms_object.ajaxurl,
+      wc_checkout_params.wc_ajax_url.replace('%%endpoint%%', 'wc_send_otp'),
       data,
       function (resp) {
          if (resp.status === 200) {
-            checkout_form.find('#place_order2').remove();
-            checkout_form.find('#place_order').show();
             $('#alpha_sms_otp_checkout').fadeIn();
-            checkout_form.prev(alert_wrapper).html(showSuccess(resp.message));
+            alert_wrapper.html(showSuccess(resp.message));
             timer(
                'wc_checkout_resend_otp',
                120,
@@ -219,14 +210,13 @@ function WC_Checkout_SendOtp(e) {
             );
          } else {
             // wrong user name pass/sms api error
-            checkout_form.prev(alert_wrapper).html(showError(resp.message));
+            alert_wrapper.html(showError(resp.message));
          }
       },
       'json'
    )
       .fail(() =>
-         checkout_form
-            .prev(alert_wrapper)
+         alert_wrapper
             .html(
                showError(
                   showError('Something went wrong. Please try again later')
@@ -237,11 +227,9 @@ function WC_Checkout_SendOtp(e) {
          $('html,body').animate(
             { scrollTop: checkout_form.offset().top },
             'slow'
-         ) && checkout_form
-              .find('#place_order2')
+         ) && $('#alpha_sms_send_otp')
               .prop('disabled', false)
-              .val('Place Order')
-              .text('Place Order')
+              .text('Send OTP')
       );
 }
 
