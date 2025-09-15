@@ -51,15 +51,19 @@ class AlphaSMS
      */
     private function sendRequest($url, $method = 'GET', $postfields = [])
     {
-
         $args = [
-            'method'    => $method,
-            'timeout'   => 45,
-            'sslverify' => false,
-            'body'      => $postfields
+            'timeout' => 45,
         ];
 
-        $request = wp_remote_post($url, $args);
+        if ($method === 'POST') {
+            $args['body'] = $postfields;
+            $request      = wp_remote_post($url, $args);
+        } else {
+            if (!empty($postfields)) {
+                $url = add_query_arg($postfields, $url);
+            }
+            $request = wp_remote_get($url, $args);
+        }
 
         if (is_wp_error($request) || wp_remote_retrieve_response_code($request) != 200) {
             return false;

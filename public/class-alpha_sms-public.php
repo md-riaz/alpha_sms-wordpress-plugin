@@ -219,9 +219,18 @@ class Alpha_sms_Public
                        exit;
                }
 
+               if (!$this->otp_request_limiter($user_phone)) {
+                       $response = [
+                               'status'  => 429,
+                               'message' => __('Too many OTP requests. Please try again later.', $this->plugin_name),
+                       ];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		//we will send sms
-		$otp_code = $this->generateOTP();
+                //we will send sms
+                $otp_code = $this->generateOTP();
 
 		$body = 'Your OTP for ' . get_bloginfo() . ' registration is ' . $otp_code . '. Valid for 2 min. Contact us if you need help.';
 
@@ -263,11 +272,11 @@ class Alpha_sms_Public
 	 *
 	 * @return false|int|string
 	 */
-	public function validateNumber($num)
-	{
-		if (!$num) {
-			return false;
-		}
+        public function validateNumber($num)
+        {
+                if (!$num) {
+                        return false;
+                }
 
 		$num    = ltrim(trim($num), "+88");
 		$number = '88' . ltrim($num, "88");
@@ -277,14 +286,35 @@ class Alpha_sms_Public
 			return $number;
 		}
 
-		return false;
-	}
+                return false;
+        }
 
-	/**
-	 * Generate 6 digit otp code
-	 *
-	 * @return string
-	 */
+        /**
+         * Limit OTP requests to prevent abuse.
+         *
+         * @param string $phone
+         *
+         * @return bool
+         */
+        private function otp_request_limiter($phone)
+        {
+                $limit_key = 'alpha_sms_otp_limit_' . $phone;
+                $requests  = (int) get_transient($limit_key);
+
+                if ($requests >= 5) {
+                        return false;
+                }
+
+                set_transient($limit_key, $requests + 1, HOUR_IN_SECONDS);
+
+                return true;
+        }
+
+        /**
+         * Generate 6 digit otp code
+         *
+         * @return string
+         */
 	public function generateOTP()
 	{
 		$otp = '';
@@ -824,15 +854,38 @@ class Alpha_sms_Public
 		}
 
 		// if user phone number is not valid then login without verification
-		if (!$user_phone || !$this->validateNumber($user_phone)) {
-			$response = ['status' => 402, 'message' => __('No phone number found')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+ if (!$user_phone || !$this->validateNumber($user_phone)) {
+ $response = ['status' => 402, 'message' => __('No phone number found')];
+ echo wp_kses_post(json_encode($response));
+ wp_die();
+ exit;
+ }
 
-		//we will send sms
-		$otp_code = $this->generateOTP();
+ $otp_data     = get_transient('alpha_sms_otp_' . $user_phone);
+ $current_time = current_time('timestamp');
+
+ if (!empty($otp_data) && isset($otp_data['expires']) && $otp_data['expires'] > $current_time) {
+ $response = [
+ 'status'  => 400,
+ 'message' => 'OTP already sent to a phone number. Please try again after ' . gmdate('i:s', $otp_data['expires'] - $current_time) . ' min',
+ ];
+ echo wp_kses_post(json_encode($response));
+ wp_die();
+ exit;
+ }
+
+ if (!$this->otp_request_limiter($user_phone)) {
+ $response = [
+ 'status'  => 429,
+ 'message' => __('Too many OTP requests. Please try again later.', $this->plugin_name),
+ ];
+ echo wp_kses_post(json_encode($response));
+ wp_die();
+ exit;
+ }
+
+ //we will send sms
+ $otp_code = $this->generateOTP();
 
 		$number = $user_phone;
 		$body   = 'Your one time password for ' . get_bloginfo() . ' login is ' . $otp_code . ' . Only valid for 2 min.';
