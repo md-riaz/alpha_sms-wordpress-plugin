@@ -57,24 +57,11 @@ class Alpha_sms_Public
 		$this->pluginActive = !empty($this->options['api_key']);
 	}
 
-		/**
-	 * @return void
-	 * @since 1.0.0
-	 * start session if not started
-	 */
-	public function start_session_wp()
-	{
-		if (!session_id()) {
-			session_start();
-		}
-	}
-
-	
-	/**
-	 * Register the stylesheets for the public-facing side of the site.
-	 *
-	 * @since    1.0.0
-	 */
+        /**
+         * Register the stylesheets for the public-facing side of the site.
+         *
+         * @since    1.0.0
+         */
 	public function enqueue_styles()
 	{
 		/**
@@ -216,17 +203,18 @@ class Alpha_sms_Public
 		}
 
 		// check for already send otp by checking expiration
-		$otp_expires = WC()->session->get('alpha_sms_expires');
+               $otp_data     = get_transient('alpha_sms_otp_' . $user_phone);
+               $current_time = current_time('timestamp');
 
-		if (!empty($otp_expires) && strtotime($otp_expires) > strtotime(ALPHA_SMS_TIMESTAMP)) {
-			$response = [
-				'status'  => 400,
-				'message' => 'OTP already sent to a phone number. Please try again after ' . date('i:s', strtotime($otp_expires) - strtotime(ALPHA_SMS_TIMESTAMP) . ' min'),
-			];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (!empty($otp_data) && isset($otp_data['expires']) && $otp_data['expires'] > $current_time) {
+                       $response = [
+                               'status'  => 400,
+                               'message' => 'OTP already sent to a phone number. Please try again after ' . gmdate('i:s', $otp_data['expires'] - $current_time) . ' min',
+                       ];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
 
 		//we will send sms
@@ -344,18 +332,21 @@ class Alpha_sms_Public
 		$mobile_phone,
 		$otp_code
 	) {
-		$dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
-		$dateTime->modify('+3 minutes');
+               $expires = current_time('timestamp') + 3 * MINUTE_IN_SECONDS;
 
-		WC()->session->set('alpha_sms_otp_phone', $mobile_phone);
-		WC()->session->set('alpha_sms_otp_code', $otp_code);
-		WC()->session->set('alpha_sms_expires', $dateTime->format('Y-m-d H:i:s'));
+               $data = [
+                       'phone'   => $mobile_phone,
+                       'code'    => $otp_code,
+                       'expires' => $expires,
+               ];
 
-		if(WC()->session->get('alpha_sms_otp_code')) {
-			return true;
-		}
+               set_transient('alpha_sms_otp_' . $mobile_phone, $data, 3 * MINUTE_IN_SECONDS);
 
-		return false;
+                if (get_transient('alpha_sms_otp_' . $mobile_phone)) {
+                        return true;
+                }
+
+                return false;
 	}
 
 	/**
@@ -452,17 +443,17 @@ class Alpha_sms_Public
 			$errors->add('duplicate_phone_error', __('Mobile number is already used!', $this->plugin_name));
 		}
 
-		if (!empty($_REQUEST['otp_code'])) {
-			$otp_code = sanitize_text_field($_REQUEST['otp_code']);
+                if (!empty($_REQUEST['otp_code'])) {
+                        $otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-			$valid_user = $this->authenticate_otp(trim($otp_code));
+                        $valid_user = $this->authenticate_otp(trim($otp_code), $billing_phone);
 
-			if ($valid_user) {
-				$this->deletePastData();
+                        if ($valid_user) {
+                                $this->deletePastData($billing_phone);
 
-				return $errors;
-			}
-		}
+                                return $errors;
+                        }
+                }
 
 
 		// otp validation failed or no otp provided
@@ -490,20 +481,22 @@ class Alpha_sms_Public
 			return;
 		}
 
-		if (!empty($_REQUEST['otp_code'])) {
-			$otp_code = sanitize_text_field($_REQUEST['otp_code']);
+                $billing_phone = isset($_REQUEST['billing_phone']) ? $this->validateNumber(sanitize_text_field($_REQUEST['billing_phone'])) : '';
 
-			$valid_user = $this->authenticate_otp(trim($otp_code));
+                if (!empty($_REQUEST['otp_code'])) {
+                        $otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-			if ($valid_user) {
-				$this->deletePastData();
-			} else {
-				wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
-			}
-		} else {
-			wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
-		}
-	}
+                        $valid_user = $this->authenticate_otp(trim($otp_code), $billing_phone);
+
+                        if ($valid_user) {
+                                $this->deletePastData($billing_phone);
+                        } else {
+                                wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
+                        }
+                } else {
+                        wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
+                }
+        }
 
 
 	/**
@@ -513,33 +506,30 @@ class Alpha_sms_Public
 	 *
 	 * @return bool
 	 */
-	public function authenticate_otp($otp_code)
-	{
-		$otp_code_session = WC()->session->get('alpha_sms_otp_code');
-		$otp_expires_session = WC()->session->get('alpha_sms_expires');
+        public function authenticate_otp($otp_code, $mobile_phone)
+        {
+               $otp_data     = get_transient('alpha_sms_otp_' . $mobile_phone);
+               $current_time = current_time('timestamp');
 
-		if (!empty($otp_code_session) && !empty($otp_expires_session)) {
-			if (strtotime($otp_expires_session) > strtotime(ALPHA_SMS_TIMESTAMP)) {
-				if ($otp_code === $otp_code_session) {
-					return true;
-				}
-			}
-		}
+               if (!empty($otp_data) && isset($otp_data['code'], $otp_data['expires'])) {
+                       if ($otp_data['expires'] > $current_time && $otp_code === $otp_data['code']) {
+                               return true;
+                       }
+               }
 
-		return false;
-	}
+               return false;
+        }
 
-	/**
-	 * delete db data of current ip address user
-	 *
-	 */
-	public function deletePastData()
-	{
-		if (WC()->session->get('alpha_sms_otp_code') || WC()->session->get('alpha_sms_expires')) {
-			WC()->session->__unset('alpha_sms_otp_code');
-			WC()->session->__unset('alpha_sms_expires');
-		}
-	}
+        /**
+         * delete db data of current ip address user
+         *
+         */
+        public function deletePastData($mobile_phone)
+        {
+                if (!empty($mobile_phone)) {
+                        delete_transient('alpha_sms_otp_' . $mobile_phone);
+                }
+        }
 
 	/**
 	 * Woocommerce validate phone and validate otp
@@ -930,15 +920,15 @@ class Alpha_sms_Public
 			return $error;
 		}
 
-		$otp_code = sanitize_text_field($_REQUEST['otp_code']);
+                $otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-		$valid_user = $this->authenticate_otp($otp_code);
+                $valid_user = $this->authenticate_otp($otp_code, $user_phone);
 
-		if ($valid_user) {
-			$this->deletePastData();
+                if ($valid_user) {
+                        $this->deletePastData($user_phone);
 
-			return $user;
-		}
+                        return $user;
+                }
 
 		return new WP_Error(
 			'invalid_password',
