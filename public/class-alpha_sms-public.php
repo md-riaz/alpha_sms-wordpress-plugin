@@ -38,8 +38,23 @@ class Alpha_sms_Public
 	private $options;
 	/**
 	 * @var false
-	 */
-	private $pluginActive;
+        */
+       private $pluginActive;
+
+       /**
+        * Maximum number of OTP requests allowed within the rate limit window.
+        */
+       private const OTP_MAX_REQUESTS = 5;
+
+       /**
+        * Rate limit window in minutes.
+        */
+       private const OTP_WINDOW_MINUTES = 20;
+
+       /**
+        * OTP expiration time in minutes.
+        */
+       private const OTP_EXPIRY_MINUTES = 5;
 
 	/**
 	 * Initialize the class and set its properties.
@@ -191,52 +206,52 @@ class Alpha_sms_Public
 			$user_phone = $this->validateNumber(sanitize_text_field($_POST['billing_phone']));
 		}
 
-		if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
-			$response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
+                       $response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		if (!$user_phone) {
-			$response = ['status' => 400, 'message' => __('The phone number you entered is not valid!')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (!$user_phone) {
+                       $response = ['status' => 400, 'message' => __('The phone number you entered is not valid!', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		// check for already send otp by checking expiration
-               $otp_data     = get_transient('alpha_sms_otp_' . $user_phone);
-               $current_time = current_time('timestamp');
+               $check = $this->can_send_otp($user_phone);
 
-               if (!empty($otp_data) && isset($otp_data['expires']) && $otp_data['expires'] > $current_time) {
+               if (is_wp_error($check)) {
+                       $status   = $check->get_error_code() === 'otp_rate_limited' ? 429 : 400;
                        $response = [
-                               'status'  => 400,
-                               'message' => 'OTP already sent to a phone number. Please try again after ' . gmdate('i:s', $otp_data['expires'] - $current_time) . ' min',
+                               'status'  => $status,
+                               'message' => $check->get_error_message(),
                        ];
                        echo wp_kses_post(json_encode($response));
                        wp_die();
                        exit;
                }
 
-               if (!$this->otp_request_limiter($user_phone)) {
-                       $response = [
-                               'status'  => 429,
-                               'message' => __('Too many OTP requests. Please try again later.', $this->plugin_name),
-                       ];
-                       echo wp_kses_post(json_encode($response));
-                       wp_die();
-                       exit;
+               //we will send sms
+               $otp_code = $this->generateOTP();
+               $expiry   = $this->get_otp_expiry_minutes($user_phone);
+
+               $body = sprintf(
+                       __('Your OTP for %1$s registration is %2$s. Valid for %3$d min. Contact us if you need help.', $this->plugin_name),
+                       get_bloginfo(),
+                       $otp_code,
+                       $expiry
+               );
+
+               if (!empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout') {
+                       $body = sprintf(
+                               __('Your OTP for secure order checkout on %1$s is %2$s. Use it within %3$d min to complete the checkout process.', $this->plugin_name),
+                               get_bloginfo(),
+                               $otp_code,
+                               $expiry
+                       );
                }
-
-                //we will send sms
-                $otp_code = $this->generateOTP();
-
-                $body = 'Your OTP for ' . get_bloginfo() . ' registration is ' . $otp_code . '. Valid for 5 min. Contact us if you need help.';
-
-		if (!empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout') {
-                        $body = 'Your OTP for secure order checkout on ' . get_bloginfo() . ' is ' . $otp_code . '. Use it within 5 min to complete the checkout process.';
-		}
 
 		$sms_response = $this->SendSMS($user_phone, $body);
 
@@ -246,12 +261,12 @@ class Alpha_sms_Public
 				$user_phone,
 				$otp_code
 			)) {
-				$response = [
-					'status'  => 200,
-					'message' => 'A OTP (One Time Passcode) has been sent. Please enter the OTP in the field below to verify your phone.',
-				];
+                               $response = [
+                                       'status'  => 200,
+                                       'message' => __('A OTP (One Time Passcode) has been sent. Please enter the OTP in the field below to verify your phone.', $this->plugin_name),
+                               ];
 			} else {
-				$response = ['status' => 400, 'message' => __('Error occurred while sending OTP. Please try again.')];
+                               $response = ['status' => 400, 'message' => __('Error occurred while sending OTP. Please try again.', $this->plugin_name)];
 			}
 
 			echo wp_kses_post(json_encode($response));
@@ -259,7 +274,7 @@ class Alpha_sms_Public
 			exit;
 		}
 
-		$response = ['status' => '400', 'message' => __('Error occurred while sending OTP. Contact Administrator.')];
+               $response = ['status' => '400', 'message' => __('Error occurred while sending OTP. Contact Administrator.', $this->plugin_name)];
 		echo wp_kses_post(json_encode($response));
 		wp_die();
 		exit;
@@ -289,10 +304,22 @@ class Alpha_sms_Public
                 return false;
         }
 
-        /**
-         * Limit OTP requests to prevent abuse.
-         *
-         * @param string $phone
+       /**
+        * Get OTP expiration in minutes.
+        *
+        * @param string $phone
+        *
+        * @return int
+        */
+       private function get_otp_expiry_minutes($phone)
+       {
+               return (int) apply_filters('alpha_sms_otp_expiry', self::OTP_EXPIRY_MINUTES, $phone);
+       }
+
+       /**
+        * Limit OTP requests to prevent abuse.
+        *
+        * @param string $phone
          *
          * @return bool
          */
@@ -300,15 +327,51 @@ class Alpha_sms_Public
         {
                 $limit_key = 'alpha_sms_otp_limit_' . $phone;
                 $requests  = (int) get_transient($limit_key);
+               $max_requests   = (int) apply_filters('alpha_sms_otp_max_requests', self::OTP_MAX_REQUESTS, $phone);
+               $window_minutes = (int) apply_filters('alpha_sms_otp_window_minutes', self::OTP_WINDOW_MINUTES, $phone);
 
-                if ($requests >= 5) {
-                        return false;
-                }
+               if ($requests >= $max_requests) {
+                       return false;
+               }
 
-                set_transient($limit_key, $requests + 1, 20 * MINUTE_IN_SECONDS);
+               set_transient($limit_key, $requests + 1, $window_minutes * MINUTE_IN_SECONDS);
 
-                return true;
-        }
+               return true;
+       }
+
+       /**
+        * Check whether an OTP can be sent to the phone.
+        *
+        * @param string $phone
+        *
+        * @return true|WP_Error
+        */
+       private function can_send_otp($phone)
+       {
+               $otp_data     = get_transient('alpha_sms_otp_' . $phone);
+               $current_time = current_time('timestamp');
+
+               if (!empty($otp_data) && isset($otp_data['expires']) && $otp_data['expires'] > $current_time) {
+                       $remaining = gmdate('i:s', $otp_data['expires'] - $current_time);
+
+                       return new WP_Error(
+                               'otp_exists',
+                               sprintf(
+                                       __('OTP already sent to this phone number. Please try again after %s min', $this->plugin_name),
+                                       $remaining
+                               )
+                       );
+               }
+
+               if (!$this->otp_request_limiter($phone)) {
+                       return new WP_Error(
+                               'otp_rate_limited',
+                               __('Too many OTP requests. Please try again later.', $this->plugin_name)
+                       );
+               }
+
+               return true;
+       }
 
         /**
          * Generate 6 digit otp code
@@ -361,11 +424,12 @@ class Alpha_sms_Public
 	 *
 	 * @return bool
 	 */
-	public function log_login_register_action(
-		$mobile_phone,
-		$otp_code
-	) {
-               $expires = current_time('timestamp') + 5 * MINUTE_IN_SECONDS;
+       public function log_login_register_action(
+               $mobile_phone,
+               $otp_code
+       ) {
+               $expiry_minutes = $this->get_otp_expiry_minutes($mobile_phone);
+               $expires        = current_time('timestamp') + $expiry_minutes * MINUTE_IN_SECONDS;
 
                $data = [
                        'phone'   => $mobile_phone,
@@ -373,7 +437,7 @@ class Alpha_sms_Public
                        'expires' => $expires,
                ];
 
-               set_transient('alpha_sms_otp_' . $mobile_phone, $data, 5 * MINUTE_IN_SECONDS);
+               set_transient('alpha_sms_otp_' . $mobile_phone, $data, $expiry_minutes * MINUTE_IN_SECONDS);
 
                 if (get_transient('alpha_sms_otp_' . $mobile_phone)) {
                         return true;
@@ -840,77 +904,73 @@ class Alpha_sms_Public
 
 		$result = wp_check_password($info['user_password'], $userdata->data->user_pass, $user_id);
 
-		if (!$user_id || !$result) {
-			$response = ['status' => 401, 'message' => __('Wrong username or password!')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (!$user_id || !$result) {
+                       $response = ['status' => 401, 'message' => __('Wrong username or password!', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		$user_phone = get_user_meta($user_id, 'mobile_phone', true);
+               $user_phone = get_user_meta($user_id, 'mobile_phone', true);
 
-		if (!$user_phone) {
-			$user_phone = get_user_meta($user_id, 'billing_phone', true);
-		}
+               if (!$user_phone) {
+                       $user_phone = get_user_meta($user_id, 'billing_phone', true);
+               }
 
-		// if user phone number is not valid then login without verification
- if (!$user_phone || !$this->validateNumber($user_phone)) {
- $response = ['status' => 402, 'message' => __('No phone number found')];
- echo wp_kses_post(json_encode($response));
- wp_die();
- exit;
- }
+               // if user phone number is not valid then login without verification
+               if (!$user_phone || !$this->validateNumber($user_phone)) {
+                       $response = ['status' => 402, 'message' => __('No phone number found', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
- $otp_data     = get_transient('alpha_sms_otp_' . $user_phone);
- $current_time = current_time('timestamp');
+               $check = $this->can_send_otp($user_phone);
 
- if (!empty($otp_data) && isset($otp_data['expires']) && $otp_data['expires'] > $current_time) {
- $response = [
- 'status'  => 400,
- 'message' => 'OTP already sent to a phone number. Please try again after ' . gmdate('i:s', $otp_data['expires'] - $current_time) . ' min',
- ];
- echo wp_kses_post(json_encode($response));
- wp_die();
- exit;
- }
+               if (is_wp_error($check)) {
+                       $status   = $check->get_error_code() === 'otp_rate_limited' ? 429 : 400;
+                       $response = [
+                               'status'  => $status,
+                               'message' => $check->get_error_message(),
+                       ];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
- if (!$this->otp_request_limiter($user_phone)) {
- $response = [
- 'status'  => 429,
- 'message' => __('Too many OTP requests. Please try again later.', $this->plugin_name),
- ];
- echo wp_kses_post(json_encode($response));
- wp_die();
- exit;
- }
+               //we will send sms
+               $otp_code = $this->generateOTP();
+               $expiry   = $this->get_otp_expiry_minutes($user_phone);
 
- //we will send sms
- $otp_code = $this->generateOTP();
+               $number = $user_phone;
+               $body   = sprintf(
+                       __('Your one time password for %1$s login is %2$s. Only valid for %3$d min.', $this->plugin_name),
+                       get_bloginfo(),
+                       $otp_code,
+                       $expiry
+               );
 
-		$number = $user_phone;
-            $body   = 'Your one time password for ' . get_bloginfo() . ' login is ' . $otp_code . ' . Only valid for 5 min.';
+               $sms_response = $this->SendSMS($number, $body);
 
-		$sms_response = $this->SendSMS($number, $body);
+               if ($sms_response->error === 0) {
+                       // save info in database for later verification
+                       $log_info = $this->log_login_register_action($user_phone, $otp_code);
 
-		if ($sms_response->error === 0) {
-			// save info in database for later verification
-			$log_info = $this->log_login_register_action($user_phone, $otp_code);
+                       if ($log_info) {
+                               $response = ['status' => 200, 'message' => __('Please enter the verification code sent to your phone.', $this->plugin_name)];
+                       } else {
+                               $response = ['status' => 500, 'message' => __('Something went wrong. Please try again.', $this->plugin_name)];
+                       }
 
-			if ($log_info) {
-				$response = ['status' => 200, 'message' => 'Please enter the verification code sent to your phone.'];
-			} else {
-				$response = ['status' => 500, 'message' => 'Something went wrong. Please try again.'];
-			}
+                       echo wp_kses_post(json_encode($response));
+                       exit;
+               }
 
-			echo wp_kses_post(json_encode($response));
-			exit;
-		}
-
-		$response = ['status' => '400', 'message' => 'Error sending Otp Code. Please contact administrator.'];
-		echo wp_kses_post(json_encode($response));
-		wp_die();
-		exit;
-	}
+               $response = ['status' => '400', 'message' => __('Error sending Otp Code. Please contact administrator.', $this->plugin_name)];
+               echo wp_kses_post(json_encode($response));
+               wp_die();
+               exit;
+        }
 
 	/**
 	 * Login the user verifying otp code
