@@ -113,12 +113,15 @@ class Alpha_sms_Public
 		);
 
 		// adding a js variable for ajax form submit url
-		wp_localize_script(
-			$this->plugin_name,
-			$this->plugin_name . '_object',
-			['ajaxurl' => admin_url('admin-ajax.php')]
-		);
-	}
+                wp_localize_script(
+                        $this->plugin_name,
+                        $this->plugin_name . '_object',
+                        [
+                                'ajaxurl'        => admin_url('admin-ajax.php'),
+                                'phone_selector' => apply_filters('alpha_sms_phone_field_selector', '#billing_phone'),
+                        ]
+                );
+        }
 
 	/**
 	 * Woocommerce
@@ -945,13 +948,10 @@ class Alpha_sms_Public
 			return;
 		}
 
-		if (!is_user_logged_in()) {
-			require_once 'partials/add-otp-checkout-form.php';
-		?>
-			<input type='hidden' name='action_type' id='action_type' value='wc_checkout' />
-<?php
-		}
-	}
+                if (!is_user_logged_in()) {
+                        require_once 'partials/add-otp-checkout-form.php';
+                }
+        }
 
 	/**
 	 * Check if entered api key is valid or not

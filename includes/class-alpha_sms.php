@@ -277,6 +277,8 @@ class Alpha_sms
         // ajax post path for sending otp in Default WordPress Reg Form or Woocommerce Reg form
         $this->loader->add_action('wp_ajax_wc_send_otp', $plugin_public, 'send_otp_for_reg');
         $this->loader->add_action('wp_ajax_nopriv_wc_send_otp', $plugin_public, 'send_otp_for_reg');
+        $this->loader->add_action('wc_ajax_wc_send_otp', $plugin_public, 'send_otp_for_reg');
+        $this->loader->add_action('wc_ajax_nopriv_wc_send_otp', $plugin_public, 'send_otp_for_reg');
 
         // otp for guest checkout form
         $this->loader->add_action('woocommerce_review_order_before_submit', $plugin_public, 'otp_form_at_checkout');
