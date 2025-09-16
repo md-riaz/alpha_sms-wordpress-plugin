@@ -5,7 +5,7 @@ if (! defined('WPINC')) {
 }
 ?>
 <div class="alpha-sms-checkout-actions woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide">
-        <button type="button" class="button alt alpha-sms-send-otp-button" id="alpha_sms_send_otp">
+        <button type="button" class="button alt alpha-sms-send-otp-button wp-element-button" id="alpha_sms_send_otp">
                 <?php esc_html_e('Send OTP', 'alpha_sms'); ?>
         </button>
         <div id="wc_checkout_resend_otp" class="alpha-sms-resend"></div>
