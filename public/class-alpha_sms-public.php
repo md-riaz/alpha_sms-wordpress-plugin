@@ -34,12 +34,19 @@ class Alpha_sms_Public
 	 * @access   private
 	 * @var      string $version The current version of this plugin.
 	 */
-	private $version;
-	private $options;
-	/**
-	 * @var false
-	 */
-	private $pluginActive;
+        private $version;
+        private $options;
+        /**
+         * @var false
+         */
+        private $pluginActive;
+
+        /**
+         * Cached OTP storage key for the current visitor.
+         *
+         * @var string|null
+         */
+        private $otpTransientKey = null;
 
 	/**
 	 * Initialize the class and set its properties.
@@ -57,24 +64,11 @@ class Alpha_sms_Public
 		$this->pluginActive = !empty($this->options['api_key']);
 	}
 
-		/**
-	 * @return void
-	 * @since 1.0.0
-	 * start session if not started
-	 */
-	public function start_session_wp()
-	{
-		if (!session_id()) {
-			session_start();
-		}
-	}
-
-	
-	/**
-	 * Register the stylesheets for the public-facing side of the site.
-	 *
-	 * @since    1.0.0
-	 */
+        /**
+         * Register the stylesheets for the public-facing side of the site.
+         *
+         * @since    1.0.0
+         */
 	public function enqueue_styles()
 	{
 		/**
@@ -216,7 +210,7 @@ class Alpha_sms_Public
 		}
 
 		// check for already send otp by checking expiration
-		$otp_expires = WC()->session->get('alpha_sms_expires');
+                $otp_expires = $this->get_otp_store_value('alpha_sms_expires');
 
 		if (!empty($otp_expires) && strtotime($otp_expires) > strtotime(ALPHA_SMS_TIMESTAMP)) {
 			$response = [
@@ -332,30 +326,38 @@ class Alpha_sms_Public
 		return $sms->Send();
 	}
 
-	/**
-	 * after sending otp to user, log the otp and data in db
-	 *
-	 * @param $mobile_phone
-	 * @param $otp_code
-	 *
-	 * @return bool
-	 */
-	public function log_login_register_action(
-		$mobile_phone,
-		$otp_code
-	) {
-		$dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
-		$dateTime->modify('+3 minutes');
+        /**
+         * After sending OTP to the user, store the OTP metadata for verification.
+         *
+         * @param $mobile_phone
+         * @param $otp_code
+         *
+         * @return bool
+         */
+        public function log_login_register_action(
+                $mobile_phone,
+                $otp_code
+        ) {
+                $dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
+                $dateTime->modify('+3 minutes');
+                $expires_at = $dateTime->format('Y-m-d H:i:s');
 
-		WC()->session->set('alpha_sms_otp_phone', $mobile_phone);
-		WC()->session->set('alpha_sms_otp_code', $otp_code);
-		WC()->session->set('alpha_sms_expires', $dateTime->format('Y-m-d H:i:s'));
+                $stored = $this->set_transient_otp_data(
+                        [
+                                'alpha_sms_otp_phone' => $mobile_phone,
+                                'alpha_sms_otp_code'  => $otp_code,
+                                'alpha_sms_expires'   => $expires_at,
+                        ],
+                        $expires_at
+                );
 
-		if(WC()->session->get('alpha_sms_otp_code')) {
-			return true;
-		}
+                if (!$stored) {
+                        return false;
+                }
 
-		return false;
+                $snapshot = $this->get_transient_otp_data();
+
+                return !empty($snapshot['alpha_sms_otp_code']);
 	}
 
 	/**
@@ -515,8 +517,8 @@ class Alpha_sms_Public
 	 */
 	public function authenticate_otp($otp_code)
 	{
-		$otp_code_session = WC()->session->get('alpha_sms_otp_code');
-		$otp_expires_session = WC()->session->get('alpha_sms_expires');
+                $otp_code_session    = $this->get_otp_store_value('alpha_sms_otp_code');
+                $otp_expires_session = $this->get_otp_store_value('alpha_sms_expires');
 
 		if (!empty($otp_code_session) && !empty($otp_expires_session)) {
 			if (strtotime($otp_expires_session) > strtotime(ALPHA_SMS_TIMESTAMP)) {
@@ -529,17 +531,155 @@ class Alpha_sms_Public
 		return false;
 	}
 
-	/**
-	 * delete db data of current ip address user
-	 *
-	 */
-	public function deletePastData()
-	{
-		if (WC()->session->get('alpha_sms_otp_code') || WC()->session->get('alpha_sms_expires')) {
-			WC()->session->__unset('alpha_sms_otp_code');
-			WC()->session->__unset('alpha_sms_expires');
-		}
-	}
+        /**
+         * Clear stored OTP data for the current visitor.
+         */
+        public function deletePastData()
+        {
+                $this->clear_transient_otp_data();
+        }
+
+        /**
+         * Retrieve a stored OTP value from the WordPress transient store.
+         *
+         * @param string $key
+         *
+         * @return mixed|string
+         */
+        private function get_otp_store_value($key)
+        {
+                $data = $this->get_transient_otp_data();
+
+                return isset($data[$key]) ? $data[$key] : '';
+        }
+
+        /**
+         * Resolve the transient key used to persist OTP state for the visitor.
+         *
+         * @return string
+         */
+        private function get_otp_transient_key()
+        {
+                if (!empty($this->otpTransientKey)) {
+                        return $this->otpTransientKey;
+                }
+
+                $session_id = '';
+
+                if (isset($_COOKIE['alpha_sms_session'])) {
+                        $session_id = sanitize_text_field(wp_unslash($_COOKIE['alpha_sms_session']));
+                }
+
+                if (empty($session_id)) {
+                        $session_id = sanitize_key(wp_generate_password(32, false, false));
+
+                        if (!headers_sent()) {
+                                $path   = defined('COOKIEPATH') ? COOKIEPATH : '/';
+                                $domain = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+                                $secure = function_exists('is_ssl') ? is_ssl() : false;
+                                $ttl    = defined('DAY_IN_SECONDS') ? DAY_IN_SECONDS : 86400;
+
+                                setcookie('alpha_sms_session', $session_id, time() + $ttl, $path, $domain, $secure, true);
+                        }
+
+                        $_COOKIE['alpha_sms_session'] = $session_id;
+                }
+
+                $this->otpTransientKey = 'alpha_sms_otp_' . $session_id;
+
+                return $this->otpTransientKey;
+        }
+
+        /**
+         * Fetch the stored OTP payload from WordPress transients.
+         *
+         * @return array
+         */
+        private function get_transient_otp_data()
+        {
+                $transient_key = $this->get_otp_transient_key();
+
+                if (empty($transient_key)) {
+                        return [];
+                }
+
+                $data = get_transient($transient_key);
+
+                return is_array($data) ? $data : [];
+        }
+
+        /**
+         * Persist OTP data to WordPress transients.
+         *
+         * @param array  $data
+         * @param string $expires_at
+         *
+         * @return bool
+         */
+        private function set_transient_otp_data(array $data, $expires_at)
+        {
+                $transient_key = $this->get_otp_transient_key();
+
+                if (empty($transient_key)) {
+                        return false;
+                }
+
+                $payload    = array_merge($this->get_transient_otp_data(), $data);
+                $expiration = $this->calculate_transient_expiration($expires_at);
+
+                return set_transient($transient_key, $payload, $expiration);
+        }
+
+        /**
+         * Clear any stored OTP data from WordPress transients.
+         */
+        private function clear_transient_otp_data()
+        {
+                $transient_key = $this->get_otp_transient_key();
+
+                if (empty($transient_key)) {
+                        return;
+                }
+
+                delete_transient($transient_key);
+        }
+
+        /**
+         * Determine how long OTP data should live in transients.
+         *
+         * @param string $expires_at
+         *
+         * @return int
+         */
+        private function calculate_transient_expiration($expires_at)
+        {
+                $minimum  = defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60;
+                $fallback = 3 * $minimum;
+
+                if (empty($expires_at)) {
+                        return $fallback;
+                }
+
+                $expires_timestamp = strtotime($expires_at);
+
+                if (!$expires_timestamp) {
+                        return $fallback;
+                }
+
+                $now = defined('ALPHA_SMS_TIMESTAMP') ? strtotime(ALPHA_SMS_TIMESTAMP) : time();
+
+                if (!$now) {
+                        $now = time();
+                }
+
+                $ttl = $expires_timestamp - $now;
+
+                if ($ttl <= 0) {
+                        return $minimum;
+                }
+
+                return $ttl;
+        }
 
 	/**
 	 * Woocommerce validate phone and validate otp
