@@ -100,7 +100,7 @@ class Alpha_SMS_Background
         }
 
         if (!class_exists('AlphaSMS')) {
-            require_once ALPHA_SMS_PATH . 'includes/sms.class.php';
+            require_once plugin_dir_path(__FILE__) . 'sms.class.php';
         }
 
         $sms = new AlphaSMS($api_key);
@@ -127,43 +127,54 @@ class Alpha_SMS_Background
     protected function record_result($payload, $response)
     {
         $option_key = $this->plugin_name . '_job_results';
+        $lock_key = $option_key . '_lock';
 
-        $results = get_option($option_key, []);
-        if (!is_array($results)) {
-            $results = [];
+        if (get_transient($lock_key)) {
+            return;
         }
 
-        $defaults = [
-            'success'    => 0,
-            'failed'     => 0,
-            'last_error' => '',
-            'failures'   => [],
-        ];
+        set_transient($lock_key, true, 10);
 
-        $results = wp_parse_args($results, $defaults);
-
-        if ($this->is_successful_response($response)) {
-            $results['success']++;
-        } else {
-            $results['failed']++;
-
-            $message = $this->extract_error_message($response);
-            $sanitized_message = sanitize_text_field($message);
-            $results['last_error'] = $sanitized_message;
-
-            if (!is_array($results['failures'])) {
-                $results['failures'] = [];
+        try {
+            $results = get_option($option_key, []);
+            if (!is_array($results)) {
+                $results = [];
             }
 
-            if (count($results['failures']) < 5) {
-                $results['failures'][] = [
-                    'number'  => sanitize_text_field($this->normalize_number(isset($payload['number']) ? $payload['number'] : '')),
-                    'message' => $sanitized_message,
-                ];
+            $defaults = [
+                'success'    => 0,
+                'failed'     => 0,
+                'last_error' => '',
+                'failures'   => [],
+            ];
+
+            $results = wp_parse_args($results, $defaults);
+
+            if ($this->is_successful_response($response)) {
+                $results['success']++;
+            } else {
+                $results['failed']++;
+
+                $message = $this->extract_error_message($response);
+                $sanitized_message = sanitize_text_field($message);
+                $results['last_error'] = $sanitized_message;
+
+                if (!is_array($results['failures'])) {
+                    $results['failures'] = [];
+                }
+
+                if (count($results['failures']) < 5) {
+                    $results['failures'][] = [
+                        'number'  => sanitize_text_field($this->normalize_number(isset($payload['number']) ? $payload['number'] : '')),
+                        'message' => $sanitized_message,
+                    ];
+                }
             }
+
+            update_option($option_key, $results);
+        } finally {
+            delete_transient($lock_key);
         }
-
-        update_option($option_key, $results);
     }
 
     /**
@@ -215,16 +226,12 @@ class Alpha_SMS_Background
     /**
      * Normalize a phone number string.
      *
-     * @param mixed $number Raw phone number input.
+     * @param string $number Raw phone number input.
      *
      * @return string
      */
     protected function normalize_number($number)
     {
-        if (is_array($number)) {
-            $number = reset($number);
-        }
-
         $number = trim((string)$number);
 
         return preg_replace('/\s+/', '', $number);

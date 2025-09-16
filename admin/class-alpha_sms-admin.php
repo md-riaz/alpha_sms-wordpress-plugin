@@ -417,10 +417,6 @@ class Alpha_sms_Admin
             $this->add_flash_notice(esc_html($message), 'error');
         }
 
-        if (0 === $queued && empty($failedQueue)) {
-            $this->add_flash_notice(__("No SMS messages were queued.", $this->plugin_name), "error");
-        }
-
         // Redirect to plugin page
         wp_redirect($_SERVER['HTTP_REFERER']);
         exit();
