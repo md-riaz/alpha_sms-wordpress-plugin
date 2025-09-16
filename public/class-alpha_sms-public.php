@@ -38,8 +38,23 @@ class Alpha_sms_Public
 	private $options;
 	/**
 	 * @var false
-	 */
-	private $pluginActive;
+        */
+       private $pluginActive;
+
+       /**
+        * Maximum number of OTP requests allowed within the rate limit window.
+        */
+       private const OTP_MAX_REQUESTS = 5;
+
+       /**
+        * Rate limit window in minutes.
+        */
+       private const OTP_WINDOW_MINUTES = 20;
+
+       /**
+        * OTP expiration time in minutes.
+        */
+       private const OTP_EXPIRY_MINUTES = 5;
 
 	/**
 	 * Initialize the class and set its properties.
@@ -57,24 +72,11 @@ class Alpha_sms_Public
 		$this->pluginActive = !empty($this->options['api_key']);
 	}
 
-		/**
-	 * @return void
-	 * @since 1.0.0
-	 * start session if not started
-	 */
-	public function start_session_wp()
-	{
-		if (!session_id()) {
-			session_start();
-		}
-	}
-
-	
-	/**
-	 * Register the stylesheets for the public-facing side of the site.
-	 *
-	 * @since    1.0.0
-	 */
+        /**
+         * Register the stylesheets for the public-facing side of the site.
+         *
+         * @since    1.0.0
+         */
 	public function enqueue_styles()
 	{
 		/**
@@ -126,12 +128,20 @@ class Alpha_sms_Public
 		);
 
 		// adding a js variable for ajax form submit url
-		wp_localize_script(
-			$this->plugin_name,
-			$this->plugin_name . '_object',
-			['ajaxurl' => admin_url('admin-ajax.php')]
-		);
-	}
+                wp_localize_script(
+                        $this->plugin_name,
+                        $this->plugin_name . '_object',
+                        [
+                                'ajaxurl'        => admin_url('admin-ajax.php'),
+                                'phone_selector' => apply_filters('alpha_sms_phone_field_selector', '#billing_phone'),
+                                'i18n_send_otp'  => __('Send OTP', 'alpha_sms'),
+                                'i18n_processing' => __('Processing…', 'alpha_sms'),
+                                'i18n_fill_required' => __('Fill in the required fields.', 'alpha_sms'),
+                                'i18n_generic_error' => __('Something went wrong. Please try again later', 'alpha_sms'),
+                                'i18n_resend'    => __('Resend OTP', 'alpha_sms'),
+                        ]
+                );
+        }
 
 	/**
 	 * Woocommerce
@@ -201,42 +211,52 @@ class Alpha_sms_Public
 			$user_phone = $this->validateNumber(sanitize_text_field($_POST['billing_phone']));
 		}
 
-		if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
-			$response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
+                       $response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		if (!$user_phone) {
-			$response = ['status' => 400, 'message' => __('The phone number you entered is not valid!')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (!$user_phone) {
+                       $response = ['status' => 400, 'message' => __('The phone number you entered is not valid!', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		// check for already send otp by checking expiration
-		$otp_expires = WC()->session->get('alpha_sms_expires');
+               $check = $this->can_send_otp($user_phone);
 
-		if (!empty($otp_expires) && strtotime($otp_expires) > strtotime(ALPHA_SMS_TIMESTAMP)) {
-			$response = [
-				'status'  => 400,
-				'message' => 'OTP already sent to a phone number. Please try again after ' . date('i:s', strtotime($otp_expires) - strtotime(ALPHA_SMS_TIMESTAMP) . ' min'),
-			];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (is_wp_error($check)) {
+                       $status   = $check->get_error_code() === 'otp_rate_limited' ? 429 : 400;
+                       $response = [
+                               'status'  => $status,
+                               'message' => $check->get_error_message(),
+                       ];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
+               //we will send sms
+               $otp_code = $this->generateOTP();
+               $expiry   = $this->get_otp_expiry_minutes($user_phone);
 
-		//we will send sms
-		$otp_code = $this->generateOTP();
+               $body = sprintf(
+                       __('Your OTP for %1$s registration is %2$s. Valid for %3$d min. Contact us if you need help.', $this->plugin_name),
+                       get_bloginfo(),
+                       $otp_code,
+                       $expiry
+               );
 
-		$body = 'Your OTP for ' . get_bloginfo() . ' registration is ' . $otp_code . '. Valid for 2 min. Contact us if you need help.';
-
-		if (!empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout') {
-			$body = 'Your OTP for secure order checkout on ' . get_bloginfo() . ' is ' . $otp_code . '. Use it within 2 min to complete the checkout process.';
-		}
+               if (!empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout') {
+                       $body = sprintf(
+                               __('Your OTP for secure order checkout on %1$s is %2$s. Use it within %3$d min to complete the checkout process.', $this->plugin_name),
+                               get_bloginfo(),
+                               $otp_code,
+                               $expiry
+                       );
+               }
 
 		$sms_response = $this->SendSMS($user_phone, $body);
 
@@ -246,12 +266,12 @@ class Alpha_sms_Public
 				$user_phone,
 				$otp_code
 			)) {
-				$response = [
-					'status'  => 200,
-					'message' => 'A OTP (One Time Passcode) has been sent. Please enter the OTP in the field below to verify your phone.',
-				];
+                               $response = [
+                                       'status'  => 200,
+                                       'message' => __('A OTP (One Time Passcode) has been sent. Please enter the OTP in the field below to verify your phone.', $this->plugin_name),
+                               ];
 			} else {
-				$response = ['status' => 400, 'message' => __('Error occurred while sending OTP. Please try again.')];
+                               $response = ['status' => 400, 'message' => __('Error occurred while sending OTP. Please try again.', $this->plugin_name)];
 			}
 
 			echo wp_kses_post(json_encode($response));
@@ -259,7 +279,7 @@ class Alpha_sms_Public
 			exit;
 		}
 
-		$response = ['status' => '400', 'message' => __('Error occurred while sending OTP. Contact Administrator.')];
+               $response = ['status' => '400', 'message' => __('Error occurred while sending OTP. Contact Administrator.', $this->plugin_name)];
 		echo wp_kses_post(json_encode($response));
 		wp_die();
 		exit;
@@ -272,11 +292,11 @@ class Alpha_sms_Public
 	 *
 	 * @return false|int|string
 	 */
-	public function validateNumber($num)
-	{
-		if (!$num) {
-			return false;
-		}
+        public function validateNumber($num)
+        {
+                if (!$num) {
+                        return false;
+                }
 
 		$num    = ltrim(trim($num), "+88");
 		$number = '88' . ltrim($num, "88");
@@ -286,14 +306,83 @@ class Alpha_sms_Public
 			return $number;
 		}
 
-		return false;
-	}
+                return false;
+        }
 
-	/**
-	 * Generate 6 digit otp code
-	 *
-	 * @return string
-	 */
+       /**
+        * Get OTP expiration in minutes.
+        *
+        * @param string $phone
+        *
+        * @return int
+        */
+       private function get_otp_expiry_minutes($phone)
+       {
+               return (int) apply_filters('alpha_sms_otp_expiry', self::OTP_EXPIRY_MINUTES, $phone);
+       }
+
+       /**
+        * Limit OTP requests to prevent abuse.
+        *
+        * @param string $phone
+         *
+         * @return bool
+         */
+        private function otp_request_limiter($phone)
+        {
+                $limit_key = 'alpha_sms_otp_limit_' . $phone;
+                $requests  = (int) get_transient($limit_key);
+               $max_requests   = (int) apply_filters('alpha_sms_otp_max_requests', self::OTP_MAX_REQUESTS, $phone);
+               $window_minutes = (int) apply_filters('alpha_sms_otp_window_minutes', self::OTP_WINDOW_MINUTES, $phone);
+
+               if ($requests >= $max_requests) {
+                       return false;
+               }
+
+               set_transient($limit_key, $requests + 1, $window_minutes * MINUTE_IN_SECONDS);
+
+               return true;
+       }
+
+       /**
+        * Check whether an OTP can be sent to the phone.
+        *
+        * @param string $phone
+        *
+        * @return true|WP_Error
+        */
+       private function can_send_otp($phone)
+       {
+               $otp_data     = get_transient('alpha_sms_otp_' . $phone);
+               $current_time = current_time('timestamp');
+
+               if (!empty($otp_data) && isset($otp_data['expires']) && $otp_data['expires'] > $current_time) {
+                       $remaining = gmdate('i:s', $otp_data['expires'] - $current_time);
+
+                       return new WP_Error(
+                               'otp_exists',
+                               sprintf(
+                                       __('OTP already sent to this phone number. Please try again after %s min', $this->plugin_name),
+                                       $remaining
+                               )
+                       );
+               }
+
+               if (!$this->otp_request_limiter($phone)) {
+                       return new WP_Error(
+                               'otp_rate_limited',
+                               __('Too many OTP requests. Please try again later.', $this->plugin_name)
+                       );
+               }
+
+               return true;
+       }
+
+        /**
+         * Generate 6 digit otp code
+         *
+         * @return string
+         */
 	public function generateOTP()
 	{
 		$otp = '';
@@ -340,22 +429,26 @@ class Alpha_sms_Public
 	 *
 	 * @return bool
 	 */
-	public function log_login_register_action(
-		$mobile_phone,
-		$otp_code
-	) {
-		$dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
-		$dateTime->modify('+3 minutes');
+       public function log_login_register_action(
+               $mobile_phone,
+               $otp_code
+       ) {
+               $expiry_minutes = $this->get_otp_expiry_minutes($mobile_phone);
+               $expires        = current_time('timestamp') + $expiry_minutes * MINUTE_IN_SECONDS;
 
-		WC()->session->set('alpha_sms_otp_phone', $mobile_phone);
-		WC()->session->set('alpha_sms_otp_code', $otp_code);
-		WC()->session->set('alpha_sms_expires', $dateTime->format('Y-m-d H:i:s'));
+               $data = [
+                       'phone'   => $mobile_phone,
+                       'code'    => $otp_code,
+                       'expires' => $expires,
+               ];
 
-		if(WC()->session->get('alpha_sms_otp_code')) {
-			return true;
-		}
+               set_transient('alpha_sms_otp_' . $mobile_phone, $data, $expiry_minutes * MINUTE_IN_SECONDS);
 
-		return false;
+                if (get_transient('alpha_sms_otp_' . $mobile_phone)) {
+                        return true;
+                }
+
+                return false;
 	}
 
 	/**
@@ -452,17 +545,17 @@ class Alpha_sms_Public
 			$errors->add('duplicate_phone_error', __('Mobile number is already used!', $this->plugin_name));
 		}
 
-		if (!empty($_REQUEST['otp_code'])) {
-			$otp_code = sanitize_text_field($_REQUEST['otp_code']);
+                if (!empty($_REQUEST['otp_code'])) {
+                        $otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-			$valid_user = $this->authenticate_otp(trim($otp_code));
+                        $valid_user = $this->authenticate_otp(trim($otp_code), $billing_phone);
 
-			if ($valid_user) {
-				$this->deletePastData();
+                        if ($valid_user) {
+                                $this->deletePastData($billing_phone);
 
-				return $errors;
-			}
-		}
+                                return $errors;
+                        }
+                }
 
 
 		// otp validation failed or no otp provided
@@ -480,30 +573,56 @@ class Alpha_sms_Public
 	 *
 	 * @return mixed
 	 */
-	public function validate_guest_checkout_otp()
-	{
+        public function validate_guest_checkout_otp()
+        {
 
-		$enable_guest_checkout = get_option('woocommerce_enable_guest_checkout');
-		$enable_guest_checkout = $enable_guest_checkout === 'yes' ? true : false;
+                $enable_guest_checkout = get_option('woocommerce_enable_guest_checkout');
+                $enable_guest_checkout = $enable_guest_checkout === 'yes' ? true : false;
 
-		if (!$this->pluginActive || !$this->options['otp_checkout'] || !$enable_guest_checkout) {
-			return;
-		}
+                if (!$this->pluginActive || !$this->options['otp_checkout'] || !$enable_guest_checkout) {
+                        return;
+                }
 
-		if (!empty($_REQUEST['otp_code'])) {
-			$otp_code = sanitize_text_field($_REQUEST['otp_code']);
+                if (!$this->is_checkout_submission_request()) {
+                        return;
+                }
 
-			$valid_user = $this->authenticate_otp(trim($otp_code));
+                $billing_phone = isset($_REQUEST['billing_phone']) ? $this->validateNumber(sanitize_text_field($_REQUEST['billing_phone'])) : '';
 
-			if ($valid_user) {
-				$this->deletePastData();
-			} else {
-				wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
-			}
-		} else {
-			wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
-		}
-	}
+                if (!empty($_REQUEST['otp_code'])) {
+                        $otp_code = sanitize_text_field($_REQUEST['otp_code']);
+
+                        $valid_user = $this->authenticate_otp(trim($otp_code), $billing_phone);
+
+                        if ($valid_user) {
+                                $this->deletePastData($billing_phone);
+                        } else {
+                                wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
+                        }
+                } else {
+                        wc_add_notice(__('Please enter a valid OTP.', 'woocommerce'), 'error');
+                }
+        }
+
+        /**
+         * Determine if the current request is attempting to place an order.
+         *
+         * @return bool
+         */
+        private function is_checkout_submission_request()
+        {
+                if (function_exists('wp_doing_ajax') && wp_doing_ajax()) {
+                        if (isset($_REQUEST['wc-ajax'])) {
+                                $endpoint = sanitize_key(wp_unslash($_REQUEST['wc-ajax']));
+
+                                return $endpoint === 'checkout';
+                        }
+
+                        return !empty($_POST['woocommerce-process-checkout-nonce']);
+                }
+
+                return !empty($_POST['woocommerce-process-checkout-nonce']);
+        }
 
 
 	/**
@@ -513,33 +632,30 @@ class Alpha_sms_Public
 	 *
 	 * @return bool
 	 */
-	public function authenticate_otp($otp_code)
-	{
-		$otp_code_session = WC()->session->get('alpha_sms_otp_code');
-		$otp_expires_session = WC()->session->get('alpha_sms_expires');
+        public function authenticate_otp($otp_code, $mobile_phone)
+        {
+               $otp_data     = get_transient('alpha_sms_otp_' . $mobile_phone);
+               $current_time = current_time('timestamp');
 
-		if (!empty($otp_code_session) && !empty($otp_expires_session)) {
-			if (strtotime($otp_expires_session) > strtotime(ALPHA_SMS_TIMESTAMP)) {
-				if ($otp_code === $otp_code_session) {
-					return true;
-				}
-			}
-		}
+               if (!empty($otp_data) && isset($otp_data['code'], $otp_data['expires'])) {
+                       if ($otp_data['expires'] > $current_time && $otp_code === $otp_data['code']) {
+                               return true;
+                       }
+               }
 
-		return false;
-	}
+               return false;
+        }
 
-	/**
-	 * delete db data of current ip address user
-	 *
-	 */
-	public function deletePastData()
-	{
-		if (WC()->session->get('alpha_sms_otp_code') || WC()->session->get('alpha_sms_expires')) {
-			WC()->session->__unset('alpha_sms_otp_code');
-			WC()->session->__unset('alpha_sms_expires');
-		}
-	}
+        /**
+         * delete db data of current ip address user
+         *
+         */
+        public function deletePastData($mobile_phone)
+        {
+                if (!empty($mobile_phone)) {
+                        delete_transient('alpha_sms_otp_' . $mobile_phone);
+                }
+        }
 
 	/**
 	 * Woocommerce validate phone and validate otp
@@ -817,54 +933,73 @@ class Alpha_sms_Public
 
 		$result = wp_check_password($info['user_password'], $userdata->data->user_pass, $user_id);
 
-		if (!$user_id || !$result) {
-			$response = ['status' => 401, 'message' => __('Wrong username or password!')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               if (!$user_id || !$result) {
+                       $response = ['status' => 401, 'message' => __('Wrong username or password!', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		$user_phone = get_user_meta($user_id, 'mobile_phone', true);
+               $user_phone = get_user_meta($user_id, 'mobile_phone', true);
 
-		if (!$user_phone) {
-			$user_phone = get_user_meta($user_id, 'billing_phone', true);
-		}
+               if (!$user_phone) {
+                       $user_phone = get_user_meta($user_id, 'billing_phone', true);
+               }
 
-		// if user phone number is not valid then login without verification
-		if (!$user_phone || !$this->validateNumber($user_phone)) {
-			$response = ['status' => 402, 'message' => __('No phone number found')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+               // if user phone number is not valid then login without verification
+               if (!$user_phone || !$this->validateNumber($user_phone)) {
+                       $response = ['status' => 402, 'message' => __('No phone number found', $this->plugin_name)];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		//we will send sms
-		$otp_code = $this->generateOTP();
+               $check = $this->can_send_otp($user_phone);
 
-		$number = $user_phone;
-		$body   = 'Your one time password for ' . get_bloginfo() . ' login is ' . $otp_code . ' . Only valid for 2 min.';
+               if (is_wp_error($check)) {
+                       $status   = $check->get_error_code() === 'otp_rate_limited' ? 429 : 400;
+                       $response = [
+                               'status'  => $status,
+                               'message' => $check->get_error_message(),
+                       ];
+                       echo wp_kses_post(json_encode($response));
+                       wp_die();
+                       exit;
+               }
 
-		$sms_response = $this->SendSMS($number, $body);
+               //we will send sms
+               $otp_code = $this->generateOTP();
+               $expiry   = $this->get_otp_expiry_minutes($user_phone);
 
-		if ($sms_response->error === 0) {
-			// save info in database for later verification
-			$log_info = $this->log_login_register_action($user_phone, $otp_code);
+               $number = $user_phone;
+               $body   = sprintf(
+                       __('Your one time password for %1$s login is %2$s. Only valid for %3$d min.', $this->plugin_name),
+                       get_bloginfo(),
+                       $otp_code,
+                       $expiry
+               );
 
-			if ($log_info) {
-				$response = ['status' => 200, 'message' => 'Please enter the verification code sent to your phone.'];
-			} else {
-				$response = ['status' => 500, 'message' => 'Something went wrong. Please try again.'];
-			}
+               $sms_response = $this->SendSMS($number, $body);
 
-			echo wp_kses_post(json_encode($response));
-			exit;
-		}
+               if ($sms_response->error === 0) {
+                       // save info in database for later verification
+                       $log_info = $this->log_login_register_action($user_phone, $otp_code);
 
-		$response = ['status' => '400', 'message' => 'Error sending Otp Code. Please contact administrator.'];
-		echo wp_kses_post(json_encode($response));
-		wp_die();
-		exit;
-	}
+                       if ($log_info) {
+                               $response = ['status' => 200, 'message' => __('Please enter the verification code sent to your phone.', $this->plugin_name)];
+                       } else {
+                               $response = ['status' => 500, 'message' => __('Something went wrong. Please try again.', $this->plugin_name)];
+                       }
+
+                       echo wp_kses_post(json_encode($response));
+                       exit;
+               }
+
+               $response = ['status' => '400', 'message' => __('Error sending Otp Code. Please contact administrator.', $this->plugin_name)];
+               echo wp_kses_post(json_encode($response));
+               wp_die();
+               exit;
+        }
 
 	/**
 	 * Login the user verifying otp code
@@ -930,15 +1065,15 @@ class Alpha_sms_Public
 			return $error;
 		}
 
-		$otp_code = sanitize_text_field($_REQUEST['otp_code']);
+                $otp_code = sanitize_text_field($_REQUEST['otp_code']);
 
-		$valid_user = $this->authenticate_otp($otp_code);
+                $valid_user = $this->authenticate_otp($otp_code, $user_phone);
 
-		if ($valid_user) {
-			$this->deletePastData();
+                if ($valid_user) {
+                        $this->deletePastData($user_phone);
 
-			return $user;
-		}
+                        return $user;
+                }
 
 		return new WP_Error(
 			'invalid_password',
@@ -955,13 +1090,10 @@ class Alpha_sms_Public
 			return;
 		}
 
-		if (!is_user_logged_in()) {
-			require_once 'partials/add-otp-checkout-form.php';
-		?>
-			<input type='hidden' name='action_type' id='action_type' value='wc_checkout' />
-<?php
-		}
-	}
+                if (!is_user_logged_in()) {
+                        require_once 'partials/add-otp-checkout-form.php';
+                }
+        }
 
 	/**
 	 * Check if entered api key is valid or not

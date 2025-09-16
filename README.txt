@@ -4,7 +4,7 @@ Tags: order notification, order SMS, woocommerce sms integration, sms plugin, mo
 Requires at least: 3.5
 Tested up to: 6.6.2
 Requires PHP: 5.6
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,18 +12,19 @@ WooCommerce SMS Notification. SMS OTP Verification for Registration and Login fo
 
 == Description ==
 
-= SMS OTP VERIFICATION AND WOOCOMMERCE SMS NOTIFICATION =
-Alpha SMS verifies Bangladeshi Mobile Number of users by sending OTP verification code during registration and login. It removes the possibility of users registering with fake or temporary Mobile Number by enabling Two Factor OTP Verification. Alpha SMS plugin also checks if Mobile Number of a user already exists. The Alpha SMS plugin includes WooCommerce Order Notification and Login and Registration.
+Alpha SMS connects your WordPress or WooCommerce site to Bangladeshi SMS messaging. It confirms the phone numbers people enter with one-time passwords (OTP) and keeps both customers and shop owners updated with simple text alerts.
 
-= WOOCOMMERCE ORDER NOTIFICATION =
-You can enable order status notifications to customers, and you can also enable new order status notifications to admins after an order is placed. SMS notification text can be customized in the admin panel very easily.
+= Key Features =
+* OTP checks on registration, login, and checkout pages. The field is built with WooCommerce hooks, so it keeps the same name no matter which theme or builder you use.
+* Safe limits for how often someone can request a new code and how long each code stays valid, stopping spam and repeat use.
+* Order status texts for customers and admins with templates you can edit to match your tone.
+* Campaign tools that let you send bulk SMS messages to saved lists or any custom number you need.
+* Shortcodes and settings that help you point the OTP field at a different phone input when the default `#billing_phone` is not available.
 
-= SEND MESSAGE CAMPAIGN =
-Send campaign message to all your WordPress/woocommerce users or any Mobile Number.
-
-= How does this plugin work? =
-1. On submitting the registration form an SMS with OTP is sent to the mobile number provided by the user.
-2. Once the OTP is entered, it is verified and the user gets registered.
+= How it works =
+1. A visitor fills out a supported form and taps “Send OTP.” The plugin sends a code to the phone number using the Alpha SMS gateway.
+2. The visitor types the received code into the OTP box. Alpha SMS checks it on the server before allowing the form to finish.
+3. Valid codes are removed right away. If something goes wrong, the plugin shows a clear, translatable error so people know what to do next.
 
 
 == Installation ==
@@ -46,6 +47,14 @@ WordPress default registration form, WooCommerce registration form, WooCommerce 
 
 == Changelog ==
 
+= 1.0.11 =
+* Added a WooCommerce-managed OTP field that renders consistently across themes and page builders.
+* Routed OTP requests through WooCommerce AJAX endpoints with transient-backed storage and validation.
+* Hardened OTP rate limiting and cleanup to prevent repeated code reuse during checkout and login.
+
+= 1.0.4 =
+* Separated message for order status change
+
 = 1.0.2 =
 * Order SMS Notification fixed
 
@@ -54,6 +63,3 @@ WordPress default registration form, WooCommerce registration form, WooCommerce 
 
 = 1.0.0 =
 * First version of plugin.
-
-= 1.0.4 =
-* Separated message for order status change

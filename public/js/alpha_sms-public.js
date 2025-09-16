@@ -2,13 +2,12 @@
 
 window.$ = jQuery;
 
-let form, wc_reg_form, alert_wrapper, checkout_form, checkout_otp, otp_input, otp_input_reg;
+let form, wc_reg_form, alert_wrapper, otp_input, otp_input_reg;
 
 // fill variables with appropriate selectors and attach event handlers
 $(function () {
-   alert_wrapper = $('.woocommerce-notices-wrapper').eq(0);
+   updateAlertWrapper($(document.body));
 
-   checkout_otp = $('#alpha_sms_otp_checkout');
    otp_input = $('#alpha_sms_otp');
    otp_input_reg = $('#alpha_sms_otp_reg');
 
@@ -22,15 +21,41 @@ $(function () {
       wc_reg_form = otp_input_reg.parent('form.woocommerce-form-register.register');
       wc_reg_form.find(':submit').on('click', WC_Reg_SendOtp);
    }
-
-
-   if (checkout_otp.length) {
-      checkout_form = $('#alpha_sms_otp_checkout').parents('form.checkout.woocommerce-checkout').eq(0);
-      $(document).on('click', '#place_order2', WC_Checkout_SendOtp);
-
-
-   }
 });
+
+$(document).on('click', '#alpha_sms_send_otp', WC_Checkout_SendOtp);
+$(document.body).on('updated_checkout', function () {
+   updateAlertWrapper($('.woocommerce-checkout'));
+});
+
+function updateAlertWrapper(context) {
+   alert_wrapper = $('.woocommerce-notices-wrapper').eq(0);
+
+   if (!alert_wrapper.length) {
+      alert_wrapper = $('.woocommerce-NoticeGroup').eq(0);
+   }
+
+   const hasContext = context && context.length;
+
+   if ((!alert_wrapper || !alert_wrapper.length) && hasContext) {
+      alert_wrapper = context.find('.woocommerce-notices-wrapper').eq(0);
+
+      if (!alert_wrapper.length && context[0] !== document.body) {
+         alert_wrapper = $('<div class="woocommerce-notices-wrapper"></div>');
+         context.prepend(alert_wrapper);
+      }
+   }
+
+   return alert_wrapper;
+}
+
+function getText(key, fallback) {
+   if (typeof alpha_sms_object !== 'undefined' && alpha_sms_object[key]) {
+      return alpha_sms_object[key];
+   }
+
+   return fallback;
+}
 
 // Error template
 function showError(msg) {
@@ -45,22 +70,25 @@ function showSuccess(msg) {
 // ajax send otp for woocommerce login
 function WC_Login_SendOtp(e) {
    if (e) e.preventDefault();
+   updateAlertWrapper(form);
    alert_wrapper.html('');
 
    let username = form.find('#username').val();
    let password = form.find('#password').val();
 
    if (!username || !password) {
-      alert_wrapper.html(showError('Fill in the required fields.'));
+      alert_wrapper.html(showError(getText('i18n_fill_required', 'Fill in the required fields.')));
       $('html,body').animate({ scrollTop: 0 }, 'slow');
       return;
    }
 
+   const processingText = getText('i18n_processing', 'Processing');
+
    form
       .find(':submit')
       .prop('disabled', true)
-      .val('Processing')
-      .text('Processing');
+      .val(processingText)
+      .text(processingText);
 
    let data = {
       action: 'alpha_sms_to_save_and_send_otp_login', //calls wp_ajax_nopriv_alpha_sms_to_save_and_send_otp_login
@@ -97,10 +125,10 @@ function WC_Login_SendOtp(e) {
    )
       .fail(() =>
          alert_wrapper.html(
-            showError('Something went wrong. Please try again later')
+            showError(getText('i18n_generic_error', 'Something went wrong. Please try again later'))
          )
       )
-      .done(() =>
+      .always(() =>
          form
             .find(':submit')
             .prop('disabled', false)
@@ -112,6 +140,7 @@ function WC_Login_SendOtp(e) {
 // ajax send otp for woocommerce registration
 function WC_Reg_SendOtp(e) {
    if (e) e.preventDefault();
+   updateAlertWrapper(wc_reg_form);
    alert_wrapper.html('');
 
    let phone = wc_reg_form.find('#reg_billing_phone').val();
@@ -119,16 +148,18 @@ function WC_Reg_SendOtp(e) {
    let password = wc_reg_form.find('#reg_password').val();
 
    if (!phone || !email) {
-      alert_wrapper.html(showError('Fill in the required fields.'));
+      alert_wrapper.html(showError(getText('i18n_fill_required', 'Fill in the required fields.')));
       $('html,body').animate({ scrollTop: 0 }, 'slow');
       return;
    }
 
+   const processingText = getText('i18n_processing', 'Processing');
+
    wc_reg_form
       .find(':submit')
       .prop('disabled', true)
-      .val('Processing')
-      .text('Processing');
+      .val(processingText)
+      .text(processingText);
 
    let data = {
       action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
@@ -162,10 +193,10 @@ function WC_Reg_SendOtp(e) {
    )
       .fail(() =>
          alert_wrapper.html(
-            showError(showError('Something went wrong. Please try again later'))
+            showError(getText('i18n_generic_error', 'Something went wrong. Please try again later'))
          )
       )
-      .done(() =>
+      .always(() =>
          wc_reg_form
             .find(':submit')
             .prop('disabled', false)
@@ -177,81 +208,103 @@ function WC_Reg_SendOtp(e) {
 // ajax send otp if checkout account creation is enabled
 function WC_Checkout_SendOtp(e) {
    if (e) e.preventDefault();
-   alert_wrapper.html('');
+   const $button = $(this);
+   const $form = $button.closest('form.checkout, form.woocommerce-checkout');
 
-   let phone = checkout_form.find('#billing_phone').val();
-
-   if (
-      !phone
-   ) {
-      checkout_form
-         .prev(alert_wrapper)
-         .html(showError('Fill in the required fields.'));
-      $('html,body').animate({ scrollTop: checkout_form.offset().top }, 'slow');
+   if (!$form.length) {
       return;
    }
 
-   checkout_form
-      .find('#place_order2')
-      .prop('disabled', true)
-      .val('Processing')
-      .text('Processing');
+   updateAlertWrapper($form);
+   alert_wrapper.html('');
 
-   let data = {
-      action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
-      billing_phone: checkout_form.find('#billing_phone').val(),
-      action_type: checkout_form.find('#action_type').val()
+   const phoneSelector = alpha_sms_object.phone_selector || '#billing_phone';
+   const phone = ($form.find(phoneSelector).val() || '').trim();
+
+   if (!phone) {
+      alert_wrapper.html(showError(getText('i18n_fill_required', 'Fill in the required fields.')));
+      $('html,body').animate({ scrollTop: $form.offset().top }, 'slow');
+      return;
+   }
+
+   const processingText = getText('i18n_processing', 'Processing');
+
+   $button
+      .prop('disabled', true)
+      .addClass('alpha-sms-button--loading')
+      .text(processingText);
+
+   const data = {
+      billing_phone: phone,
+      action_type: $form.find('#action_type').val()
    };
 
+   let requestUrl;
+
+   if (typeof wc_checkout_params !== 'undefined' && wc_checkout_params.wc_ajax_url) {
+      requestUrl = wc_checkout_params.wc_ajax_url.replace(
+         '%%endpoint%%',
+         'wc_send_otp'
+      );
+   } else {
+      requestUrl = alpha_sms_object.ajaxurl;
+      data.action = 'wc_send_otp';
+   }
+
    $.post(
-      alpha_sms_object.ajaxurl,
+      requestUrl,
       data,
       function (resp) {
          if (resp.status === 200) {
-            checkout_form.find('#place_order2').remove();
-            checkout_form.find('#place_order').show();
-            $('#alpha_sms_otp_checkout').fadeIn();
-            checkout_form.prev(alert_wrapper).html(showSuccess(resp.message));
+            const $otpField = $form.find('#alpha_sms_otp_checkout');
+            const resendText = getText('i18n_resend', 'Resend OTP');
+
+            $otpField.stop(true, true).slideDown();
+            alert_wrapper.html(showSuccess(resp.message));
             timer(
                'wc_checkout_resend_otp',
                120,
-               `<a href="javascript:WC_Checkout_SendOtp()">Resend OTP</a>`
+               `<a href="javascript:WC_Checkout_SendOtp()">${resendText}</a>`
             );
          } else {
-            // wrong user name pass/sms api error
-            checkout_form.prev(alert_wrapper).html(showError(resp.message));
+            alert_wrapper.html(
+               showError(
+                  resp.message || getText('i18n_generic_error', 'Something went wrong. Please try again later')
+               )
+            );
          }
       },
       'json'
    )
       .fail(() =>
-         checkout_form
-            .prev(alert_wrapper)
-            .html(
-               showError(
-                  showError('Something went wrong. Please try again later')
-               )
-            )
+         alert_wrapper.html(
+            showError(getText('i18n_generic_error', 'Something went wrong. Please try again later'))
+         )
       )
-      .done(() =>
-         $('html,body').animate(
-            { scrollTop: checkout_form.offset().top },
-            'slow'
-         ) && checkout_form
-              .find('#place_order2')
-              .prop('disabled', false)
-              .val('Place Order')
-              .text('Place Order')
-      );
+      .always(() => {
+         const sendText = getText('i18n_send_otp', 'Send OTP');
+
+         $('html,body').animate({ scrollTop: $form.offset().top }, 'slow');
+         $button
+            .prop('disabled', false)
+            .removeClass('alpha-sms-button--loading')
+            .text(sendText);
+      });
 }
 
 function timer(displayID, remaining, timeoutEl = '') {
+   const container = document.getElementById(displayID);
+
+   if (!container) {
+      return;
+   }
+
    let m = Math.floor(remaining / 60);
    let s = remaining % 60;
 
    m = m < 10 ? '0' + m : m;
    s = s < 10 ? '0' + s : s;
-   document.getElementById(displayID).innerHTML = m + ':' + s;
+   container.innerHTML = m + ':' + s;
    remaining -= 1;
 
    if (remaining >= 0) {
@@ -261,5 +314,5 @@ function timer(displayID, remaining, timeoutEl = '') {
       return;
    }
    // Do timeout stuff here
-   document.getElementById(displayID).innerHTML = timeoutEl;
+   container.innerHTML = timeoutEl;
 }
