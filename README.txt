@@ -4,7 +4,7 @@ Tags: order notification, order SMS, woocommerce sms integration, sms plugin, mo
 Requires at least: 3.5
 Tested up to: 6.6.2
 Requires PHP: 5.6
-Stable tag: 1.0.10
+Stable tag: 1.0.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,11 @@ WordPress default registration form, WooCommerce registration form, WooCommerce 
 2. Campaign form for sending bulk sms.
 
 == Changelog ==
+
+= 1.0.11 =
+* Added a WooCommerce-managed OTP field that renders consistently across themes and page builders.
+* Routed OTP requests through WooCommerce AJAX endpoints with transient-backed storage and validation.
+* Hardened OTP rate limiting and cleanup to prevent repeated code reuse during checkout and login.
 
 = 1.0.2 =
 * Order SMS Notification fixed
