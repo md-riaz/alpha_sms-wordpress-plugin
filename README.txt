@@ -12,18 +12,19 @@ WooCommerce SMS Notification. SMS OTP Verification for Registration and Login fo
 
 == Description ==
 
-= SMS OTP VERIFICATION AND WOOCOMMERCE SMS NOTIFICATION =
-Alpha SMS verifies Bangladeshi Mobile Number of users by sending OTP verification code during registration and login. It removes the possibility of users registering with fake or temporary Mobile Number by enabling Two Factor OTP Verification. Alpha SMS plugin also checks if Mobile Number of a user already exists. The Alpha SMS plugin includes WooCommerce Order Notification and Login and Registration.
+Alpha SMS adds Bangladeshi SMS delivery and verification to WordPress and WooCommerce. It keeps customer phone numbers accurate with OTP challenges and keeps shop owners informed with transaction updates.
 
-= WOOCOMMERCE ORDER NOTIFICATION =
-You can enable order status notifications to customers, and you can also enable new order status notifications to admins after an order is placed. SMS notification text can be customized in the admin panel very easily.
+= Key Features =
+* OTP verification for WordPress and WooCommerce registration, login, and checkout screens using WooCommerce-managed form fields.
+* Configurable rate limiting and expiry windows that stop repeated OTP requests and block code reuse.
+* Order status notifications for customers and admins with customizable SMS templates.
+* Bulk messaging tools for campaigns to any stored or custom phone numbers.
+* Shortcodes and settings to target alternate phone inputs when the default billing phone is customized by a page builder.
 
-= SEND MESSAGE CAMPAIGN =
-Send campaign message to all your WordPress/woocommerce users or any Mobile Number.
-
-= How does this plugin work? =
-1. On submitting the registration form an SMS with OTP is sent to the mobile number provided by the user.
-2. Once the OTP is entered, it is verified and the user gets registered.
+= How it works =
+1. When a supported form is submitted, the plugin sends an OTP to the supplied mobile number using Alpha SMS.
+2. Customers confirm the OTP, and the plugin validates it server-side before completing the action.
+3. Verified codes are cleared immediately, while failed attempts trigger informative, translatable errors.
 
 
 == Installation ==
@@ -51,6 +52,9 @@ WordPress default registration form, WooCommerce registration form, WooCommerce 
 * Routed OTP requests through WooCommerce AJAX endpoints with transient-backed storage and validation.
 * Hardened OTP rate limiting and cleanup to prevent repeated code reuse during checkout and login.
 
+= 1.0.4 =
+* Separated message for order status change
+
 = 1.0.2 =
 * Order SMS Notification fixed
 
@@ -59,6 +63,3 @@ WordPress default registration form, WooCommerce registration form, WooCommerce 
 
 = 1.0.0 =
 * First version of plugin.
-
-= 1.0.4 =
-* Separated message for order status change
