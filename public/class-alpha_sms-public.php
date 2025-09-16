@@ -57,24 +57,11 @@ class Alpha_sms_Public
 		$this->pluginActive = !empty($this->options['api_key']);
 	}
 
-		/**
-	 * @return void
-	 * @since 1.0.0
-	 * start session if not started
-	 */
-	public function start_session_wp()
-	{
-		if (!session_id()) {
-			session_start();
-		}
-	}
-
-	
-	/**
-	 * Register the stylesheets for the public-facing side of the site.
-	 *
-	 * @since    1.0.0
-	 */
+        /**
+         * Register the stylesheets for the public-facing side of the site.
+         *
+         * @since    1.0.0
+         */
 	public function enqueue_styles()
 	{
 		/**
