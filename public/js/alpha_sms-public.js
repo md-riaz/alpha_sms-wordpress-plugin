@@ -2,7 +2,15 @@
 
 window.$ = jQuery;
 
-let form, wc_reg_form, alert_wrapper, checkout_form, checkout_otp, otp_input, otp_input_reg;
+let form,
+   wc_reg_form,
+   alert_wrapper,
+   checkout_form,
+   checkout_otp,
+   otp_input,
+   otp_input_reg,
+   checkout_submit_button,
+   checkout_proxy_button;
 
 // fill variables with appropriate selectors and attach event handlers
 $(function () {
@@ -24,12 +32,8 @@ $(function () {
    }
 
 
-   if (checkout_otp.length) {
-      checkout_form = $('#alpha_sms_otp_checkout').parents('form.checkout.woocommerce-checkout').eq(0);
-      $(document).on('click', '#place_order2', WC_Checkout_SendOtp);
-
-
-   }
+   initializeCheckoutSubmitProxy();
+   $(document.body).on('updated_checkout', initializeCheckoutSubmitProxy);
 });
 
 // Error template
@@ -179,6 +183,21 @@ function WC_Checkout_SendOtp(e) {
    if (e) e.preventDefault();
    alert_wrapper.html('');
 
+   if (!checkout_form || !checkout_form.length) {
+      checkout_otp = $('#alpha_sms_otp_checkout');
+      checkout_form = checkout_otp
+         .parents('form.checkout.woocommerce-checkout')
+         .eq(0);
+
+      if (!checkout_form.length) {
+         checkout_form = checkout_otp.closest('form');
+      }
+   }
+
+   if (!checkout_form || !checkout_form.length) {
+      return;
+   }
+
    let phone = checkout_form.find('#billing_phone').val();
 
    if (
@@ -191,11 +210,10 @@ function WC_Checkout_SendOtp(e) {
       return;
    }
 
-   checkout_form
-      .find('#place_order2')
-      .prop('disabled', true)
-      .val('Processing')
-      .text('Processing');
+   if (checkout_proxy_button && checkout_proxy_button.length) {
+      checkout_proxy_button.prop('disabled', true);
+      setButtonLabel(checkout_proxy_button, 'Processing');
+   }
 
    let data = {
       action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
@@ -208,8 +226,27 @@ function WC_Checkout_SendOtp(e) {
       data,
       function (resp) {
          if (resp.status === 200) {
-            checkout_form.find('#place_order2').remove();
-            checkout_form.find('#place_order').show();
+            if (checkout_proxy_button && checkout_proxy_button.length) {
+               checkout_proxy_button.off('click', WC_Checkout_SendOtp).remove();
+               checkout_proxy_button = null;
+            }
+
+            if (!checkout_submit_button || !checkout_submit_button.length) {
+               checkout_submit_button = checkout_form
+                  .find('[name="woocommerce_checkout_place_order"][type="submit"]')
+                  .last();
+
+               if (!checkout_submit_button.length) {
+                  checkout_submit_button = checkout_form
+                     .find('button[type="submit"], input[type="submit"]')
+                     .last();
+               }
+            }
+
+            if (checkout_submit_button && checkout_submit_button.length) {
+               checkout_submit_button.show();
+               checkout_submit_button.prop('disabled', false);
+            }
             $('#alpha_sms_otp_checkout').fadeIn();
             checkout_form.prev(alert_wrapper).html(showSuccess(resp.message));
             timer(
@@ -233,16 +270,227 @@ function WC_Checkout_SendOtp(e) {
                )
             )
       )
-      .done(() =>
+      .done(() => {
          $('html,body').animate(
             { scrollTop: checkout_form.offset().top },
             'slow'
-         ) && checkout_form
-              .find('#place_order2')
-              .prop('disabled', false)
-              .val('Place Order')
-              .text('Place Order')
-      );
+         );
+
+         if (checkout_proxy_button && checkout_proxy_button.length) {
+            checkout_proxy_button.prop('disabled', false);
+            const defaultLabel =
+               checkout_proxy_button.data('alphaSmsOriginalLabel') || 'Place Order';
+            setButtonLabel(checkout_proxy_button, defaultLabel);
+         }
+      });
+}
+
+function getButtonLabel(button) {
+   if (!button || !button.length) {
+      return '';
+   }
+
+   if (button.is('input')) {
+      return button.val();
+   }
+
+   return button.html();
+}
+
+function setButtonLabel(button, label) {
+   if (!button || !button.length) {
+      return;
+   }
+
+   const safeLabel = label !== undefined && label !== null ? label : '';
+
+   if (button.is('input')) {
+      button.val(safeLabel);
+      return;
+   }
+
+   button.html(safeLabel);
+}
+
+function createCheckoutProxyButton(originalButton) {
+   if (!originalButton || !originalButton.length) {
+      return null;
+   }
+
+   let proxyButton;
+
+   if (originalButton.is('input')) {
+      proxyButton = $('<input type="button" />');
+   } else {
+      proxyButton = $('<button type="button"></button>');
+   }
+
+   const originalClassAttr = originalButton.attr('class');
+
+   if (originalClassAttr) {
+      proxyButton.attr('class', originalClassAttr);
+   }
+
+   proxyButton.addClass('alpha-sms-place-order');
+
+   const originalAttributes = originalButton.get(0).attributes;
+
+   for (let i = 0; i < originalAttributes.length; i += 1) {
+      const attribute = originalAttributes[i];
+
+      if (!attribute) {
+         continue;
+      }
+
+      const attributeName = attribute.name;
+
+      if (!attributeName) {
+         continue;
+      }
+
+      if (
+         attributeName === 'id' ||
+         attributeName === 'name' ||
+         attributeName === 'type' ||
+         attributeName === 'class' ||
+         attributeName === 'style'
+      ) {
+         continue;
+      }
+
+      if (attributeName === 'value' && !originalButton.is('input')) {
+         continue;
+      }
+
+      proxyButton.attr(attributeName, attribute.value);
+   }
+
+   const defaultLabel = getButtonLabel(originalButton);
+
+   proxyButton.data('alphaSmsOriginalLabel', defaultLabel);
+   setButtonLabel(proxyButton, defaultLabel);
+
+   copyComputedStyles(originalButton, proxyButton);
+
+   return proxyButton;
+}
+
+function copyComputedStyles(originalButton, proxyButton) {
+   if (
+      !originalButton ||
+      !originalButton.length ||
+      !proxyButton ||
+      !proxyButton.length
+   ) {
+      return;
+   }
+
+   const originalNode = originalButton.get(0);
+   const proxyNode = proxyButton.get(0);
+
+   if (!originalNode || !proxyNode || !window || !window.getComputedStyle) {
+      return;
+   }
+
+   const computedStyles = window.getComputedStyle(originalNode);
+
+   proxyNode.style.cssText = '';
+
+   for (let i = 0; i < computedStyles.length; i += 1) {
+      const propertyName = computedStyles[i];
+
+      if (!propertyName) {
+         continue;
+      }
+
+      const propertyValue = computedStyles.getPropertyValue(propertyName);
+
+      if (!propertyValue) {
+         continue;
+      }
+
+      if (propertyName === 'display' && propertyValue === 'none') {
+         continue;
+      }
+
+      const priority = computedStyles.getPropertyPriority(propertyName);
+
+      proxyNode.style.setProperty(propertyName, propertyValue, priority);
+   }
+}
+
+function initializeCheckoutSubmitProxy() {
+   checkout_otp = $('#alpha_sms_otp_checkout');
+
+   if (!checkout_otp.length) {
+      if (checkout_proxy_button && checkout_proxy_button.length) {
+         checkout_proxy_button.off('click', WC_Checkout_SendOtp).remove();
+      }
+
+      if (checkout_submit_button && checkout_submit_button.length) {
+         checkout_submit_button.show();
+      }
+
+      checkout_form = null;
+      checkout_proxy_button = null;
+      checkout_submit_button = null;
+      return;
+   }
+
+   checkout_form = checkout_otp
+      .parents('form.checkout.woocommerce-checkout')
+      .eq(0);
+
+   if (!checkout_form.length) {
+      checkout_form = checkout_otp.closest('form');
+   }
+
+   if (!checkout_form.length) {
+      return;
+   }
+
+   if (checkout_proxy_button && checkout_proxy_button.length) {
+      checkout_proxy_button.off('click', WC_Checkout_SendOtp).remove();
+   }
+
+   checkout_form.find('.alpha-sms-place-order').remove();
+   checkout_proxy_button = null;
+
+   checkout_submit_button = checkout_form
+      .find('[name="woocommerce_checkout_place_order"][type="submit"]')
+      .not('.alpha-sms-place-order')
+      .last();
+
+   if (!checkout_submit_button.length) {
+      checkout_submit_button = checkout_form
+         .find('button[type="submit"], input[type="submit"]')
+         .not('.alpha-sms-place-order')
+         .last();
+   }
+
+   if (!checkout_submit_button.length) {
+      return;
+   }
+
+   checkout_submit_button.show();
+   checkout_submit_button.prop('disabled', false);
+
+   checkout_proxy_button = createCheckoutProxyButton(checkout_submit_button);
+
+   if (!checkout_proxy_button || !checkout_proxy_button.length) {
+      return;
+   }
+
+   const defaultLabel =
+      checkout_proxy_button.data('alphaSmsOriginalLabel') || 'Place Order';
+
+   setButtonLabel(checkout_proxy_button, defaultLabel);
+   checkout_proxy_button.prop('disabled', false);
+
+   checkout_submit_button.after(checkout_proxy_button);
+   checkout_proxy_button.on('click', WC_Checkout_SendOtp);
+
+   checkout_submit_button.hide();
 }
 
 function timer(displayID, remaining, timeoutEl = '') {
