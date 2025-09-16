@@ -42,7 +42,7 @@ class Alpha_sms_Public
         private $pluginActive;
 
         /**
-         * Cached OTP storage key when WooCommerce sessions are unavailable.
+         * Cached OTP storage key for the current visitor.
          *
          * @var string|null
          */
@@ -210,7 +210,7 @@ class Alpha_sms_Public
 		}
 
 		// check for already send otp by checking expiration
-                $otp_expires = $this->get_otp_session_value('alpha_sms_expires');
+                $otp_expires = $this->get_otp_store_value('alpha_sms_expires');
 
 		if (!empty($otp_expires) && strtotime($otp_expires) > strtotime(ALPHA_SMS_TIMESTAMP)) {
 			$response = [
@@ -326,30 +326,21 @@ class Alpha_sms_Public
 		return $sms->Send();
 	}
 
-	/**
-	 * after sending otp to user, log the otp and data in db
-	 *
-	 * @param $mobile_phone
-	 * @param $otp_code
-	 *
-	 * @return bool
-	 */
-	public function log_login_register_action(
-		$mobile_phone,
-		$otp_code
-	) {
+        /**
+         * After sending OTP to the user, store the OTP metadata for verification.
+         *
+         * @param $mobile_phone
+         * @param $otp_code
+         *
+         * @return bool
+         */
+        public function log_login_register_action(
+                $mobile_phone,
+                $otp_code
+        ) {
                 $dateTime = new DateTime(ALPHA_SMS_TIMESTAMP);
                 $dateTime->modify('+3 minutes');
                 $expires_at = $dateTime->format('Y-m-d H:i:s');
-
-                if ($this->is_woocommerce_session_available()) {
-                        $session = WC()->session;
-                        $session->set('alpha_sms_otp_phone', $mobile_phone);
-                        $session->set('alpha_sms_otp_code', $otp_code);
-                        $session->set('alpha_sms_expires', $expires_at);
-
-                        return (bool) $session->get('alpha_sms_otp_code');
-                }
 
                 $stored = $this->set_transient_otp_data(
                         [
@@ -526,8 +517,8 @@ class Alpha_sms_Public
 	 */
 	public function authenticate_otp($otp_code)
 	{
-                $otp_code_session    = $this->get_otp_session_value('alpha_sms_otp_code');
-                $otp_expires_session = $this->get_otp_session_value('alpha_sms_expires');
+                $otp_code_session    = $this->get_otp_store_value('alpha_sms_otp_code');
+                $otp_expires_session = $this->get_otp_store_value('alpha_sms_expires');
 
 		if (!empty($otp_code_session) && !empty($otp_expires_session)) {
 			if (strtotime($otp_expires_session) > strtotime(ALPHA_SMS_TIMESTAMP)) {
@@ -540,69 +531,30 @@ class Alpha_sms_Public
 		return false;
 	}
 
-	/**
-	 * delete db data of current ip address user
-	 *
-	 */
+        /**
+         * Clear stored OTP data for the current visitor.
+         */
         public function deletePastData()
         {
-                if ($this->is_woocommerce_session_available()) {
-                        $session = WC()->session;
-
-                        if ($session->get('alpha_sms_otp_code') || $session->get('alpha_sms_expires')) {
-                                $session->__unset('alpha_sms_otp_code');
-                                $session->__unset('alpha_sms_expires');
-                                $session->__unset('alpha_sms_otp_phone');
-                        }
-
-                        return;
-                }
-
                 $this->clear_transient_otp_data();
         }
 
         /**
-         * Determine if WooCommerce's session handler is available.
-         *
-         * @return bool
-         */
-        private function is_woocommerce_session_available()
-        {
-                if (!function_exists('WC')) {
-                        return false;
-                }
-
-                $wc = WC();
-
-                if (!$wc || !isset($wc->session)) {
-                        return false;
-                }
-
-                $session = $wc->session;
-
-                return is_object($session) && method_exists($session, 'get') && method_exists($session, 'set');
-        }
-
-        /**
-         * Retrieve a stored OTP value from the active session backend.
+         * Retrieve a stored OTP value from the WordPress transient store.
          *
          * @param string $key
          *
          * @return mixed|string
          */
-        private function get_otp_session_value($key)
+        private function get_otp_store_value($key)
         {
-                if ($this->is_woocommerce_session_available()) {
-                        return WC()->session->get($key);
-                }
-
                 $data = $this->get_transient_otp_data();
 
                 return isset($data[$key]) ? $data[$key] : '';
         }
 
         /**
-         * Resolve the transient key used when WooCommerce sessions are unavailable.
+         * Resolve the transient key used to persist OTP state for the visitor.
          *
          * @return string
          */

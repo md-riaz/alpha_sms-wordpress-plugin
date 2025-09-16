@@ -4,7 +4,7 @@ Tags: order notification, order SMS, woocommerce sms integration, sms plugin, mo
 Requires at least: 3.5
 Tested up to: 6.6.2
 Requires PHP: 5.6
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,7 +50,7 @@ Alpha SMS currently works with the default WordPress registration form, the Word
 Yes. You must have an Alpha SMS account with available credits in order to send OTPs and notifications. Enter your API key and token in the plugin settings to connect your site.
 
 = Does the plugin work without WooCommerce? =
-Yes. OTP verification for WordPress registration and login works independently of WooCommerce. When WooCommerce isn't active, OTP data is stored with WordPress transients so that verification continues to work. WooCommerce is only required if you want order notifications or checkout verification.
+Yes. OTP verification for WordPress and WooCommerce registration and login works independently of WooCommerce. OTP data is stored with WordPress transients, so WooCommerce sessions are not required. WooCommerce is only needed if you want order notifications or checkout verification.
 
 == Screenshots ==
 
@@ -58,6 +58,9 @@ Yes. OTP verification for WordPress registration and login works independently o
 2. Campaign form for sending bulk SMS.
 
 == Changelog ==
+
+= 1.0.12 =
+* Simplified OTP storage to rely solely on WordPress transients instead of WooCommerce sessions.
 
 = 1.0.11 =
 * Added a WordPress transient-based OTP fallback for sites without WooCommerce while removing the unused session bootstrapper.
