@@ -208,7 +208,12 @@ function WC_Reg_SendOtp(e) {
 // ajax send otp if checkout account creation is enabled
 function WC_Checkout_SendOtp(e) {
    if (e) e.preventDefault();
-   const $button = $(this);
+
+   const $button = $('#alpha_sms_send_otp');
+
+   if (!$button.length) {
+      return;
+   }
    const $form = $button.closest('form.checkout, form.woocommerce-checkout');
 
    if (!$form.length) {
