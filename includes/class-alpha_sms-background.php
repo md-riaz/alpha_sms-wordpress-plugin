@@ -90,10 +90,17 @@ class Alpha_SMS_Background
             return;
         }
 
-        $number = isset($payload['number']) ? $this->normalize_number($payload['number']) : '';
-        $body = isset($payload['body']) ? (string)$payload['body'] : '';
-        $sender_id = isset($payload['sender_id']) ? (string)$payload['sender_id'] : '';
-        $api_key = isset($payload['api_key']) ? (string)$payload['api_key'] : '';
+        $payload = wp_parse_args($payload, [
+            'number'    => '',
+            'body'      => '',
+            'sender_id' => '',
+            'api_key'   => '',
+        ]);
+
+        $number = $this->normalize_number($payload['number']);
+        $body = (string)$payload['body'];
+        $sender_id = (string)$payload['sender_id'];
+        $api_key = (string)$payload['api_key'];
 
         if ('' === $number || '' === $body || '' === $api_key) {
             return;
@@ -129,11 +136,9 @@ class Alpha_SMS_Background
         $option_key = $this->plugin_name . '_job_results';
         $lock_key = $option_key . '_lock';
 
-        if (get_transient($lock_key)) {
+        if (!add_transient($lock_key, true, 10)) {
             return;
         }
-
-        set_transient($lock_key, true, 10);
 
         try {
             $results = get_option($option_key, []);

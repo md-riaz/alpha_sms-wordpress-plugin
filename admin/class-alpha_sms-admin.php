@@ -85,7 +85,7 @@ class Alpha_sms_Admin
      */
     private function get_background_processor()
     {
-        if ($this->background && class_exists('Alpha_SMS_Background') && $this->background instanceof Alpha_SMS_Background) {
+        if ($this->background instanceof Alpha_SMS_Background) {
             return $this->background;
         }
 
