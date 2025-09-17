@@ -4,7 +4,7 @@ Tags: order notification, order SMS, woocommerce sms integration, sms plugin, mo
 Requires at least: 3.5
 Tested up to: 6.6.2
 Requires PHP: 5.6
-Stable tag: 1.0.12
+Stable tag: 1.0.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,11 +62,14 @@ Yes. OTP verification for WordPress and WooCommerce registration and login works
 = 1.0.12 =
 * Added a background processor so campaign SMS messages are queued individually and sent by scheduled jobs.
 * Aggregated campaign job results into concise admin notices that highlight failed numbers and the most recent error.
-* Simplified OTP storage to rely solely on WordPress transients instead of WooCommerce sessions.
 
 = 1.0.11 =
+* Updated the WooCommerce checkout OTP workflow to clone whichever submit button is present instead of relying on the `#place_order` ID so guest checkout themes remain compatible.
+* Simplified OTP storage to rely solely on WordPress transients instead of WooCommerce sessions.
 * Added a WordPress transient-based OTP fallback for sites without WooCommerce while removing the unused session bootstrapper.
 * Refreshed plugin documentation and guidance in the readme.
+* Added a guest checkout OTP rate limit of four requests per fifteen minutes to prevent abuse.
+* Streamlined the checkout JavaScript so the OTP trigger is easier to follow while still mirroring the theme's button styling.
 
 = 1.0.4 =
 * Separated messages for order status changes.
