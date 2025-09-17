@@ -64,6 +64,8 @@ Yes. OTP verification for WordPress and WooCommerce registration and login works
 * Simplified OTP storage to rely solely on WordPress transients instead of WooCommerce sessions.
 * Added a WordPress transient-based OTP fallback for sites without WooCommerce while removing the unused session bootstrapper.
 * Refreshed plugin documentation and guidance in the readme.
+* Added a guest checkout OTP rate limit of four requests per fifteen minutes to prevent abuse.
+* Streamlined the checkout JavaScript so the OTP trigger is easier to follow while still mirroring the theme's button styling.
 
 = 1.0.4 =
 * Separated messages for order status changes.

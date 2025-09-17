@@ -48,6 +48,20 @@ class Alpha_sms_Public
          */
         private $otpTransientKey = null;
 
+        /**
+         * Maximum number of OTP requests allowed for guest checkout within the rate limit window.
+         *
+         * @var int
+         */
+        private $checkoutOtpRateLimit = 4;
+
+        /**
+         * Time window in seconds for guest checkout OTP rate limiting.
+         *
+         * @var int
+         */
+        private $checkoutOtpRateWindow = 900;
+
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -195,24 +209,36 @@ class Alpha_sms_Public
 			$user_phone = $this->validateNumber(sanitize_text_field($_POST['billing_phone']));
 		}
 
-		if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
-			$response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+                if (isset($_POST['password']) && empty($_POST['password']) && strlen($_POST['password']) < 8) {
+                        $response = ['status' => 400, 'message' => __('Weak - Please enter a stronger password.')];
+                        echo wp_kses_post(json_encode($response));
+                        wp_die();
+                        exit;
+                }
 
-		if (!$user_phone) {
-			$response = ['status' => 400, 'message' => __('The phone number you entered is not valid!')];
-			echo wp_kses_post(json_encode($response));
-			wp_die();
-			exit;
-		}
+                if (!$user_phone) {
+                        $response = ['status' => 400, 'message' => __('The phone number you entered is not valid!')];
+                        echo wp_kses_post(json_encode($response));
+                        wp_die();
+                        exit;
+                }
 
-		// check for already send otp by checking expiration
+                $is_checkout_request = !empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout';
+
+                if ($is_checkout_request && !is_user_logged_in() && $this->is_checkout_rate_limited()) {
+                        $response = [
+                                'status'  => 429,
+                                'message' => __('You have reached the maximum number of OTP requests. Please try again in 15 minutes.'),
+                        ];
+                        echo wp_kses_post(json_encode($response));
+                        wp_die();
+                        exit;
+                }
+
+                // check for already send otp by checking expiration
                 $otp_expires = $this->get_otp_store_value('alpha_sms_expires');
 
-		if (!empty($otp_expires) && strtotime($otp_expires) > strtotime(ALPHA_SMS_TIMESTAMP)) {
+                if (!empty($otp_expires) && strtotime($otp_expires) > strtotime(ALPHA_SMS_TIMESTAMP)) {
 			$response = [
 				'status'  => 400,
 				'message' => 'OTP already sent to a phone number. Please try again after ' . date('i:s', strtotime($otp_expires) - strtotime(ALPHA_SMS_TIMESTAMP) . ' min'),
@@ -228,23 +254,26 @@ class Alpha_sms_Public
 
 		$body = 'Your OTP for ' . get_bloginfo() . ' registration is ' . $otp_code . '. Valid for 2 min. Contact us if you need help.';
 
-		if (!empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout') {
-			$body = 'Your OTP for secure order checkout on ' . get_bloginfo() . ' is ' . $otp_code . '. Use it within 2 min to complete the checkout process.';
-		}
+                if ($is_checkout_request) {
+                        $body = 'Your OTP for secure order checkout on ' . get_bloginfo() . ' is ' . $otp_code . '. Use it within 2 min to complete the checkout process.';
+                }
 
-		$sms_response = $this->SendSMS($user_phone, $body);
+                $sms_response = $this->SendSMS($user_phone, $body);
 
-		if ($sms_response->error === 0) {
-			// save info in database for later verification
-			if ($this->log_login_register_action(
-				$user_phone,
-				$otp_code
-			)) {
-				$response = [
-					'status'  => 200,
-					'message' => 'A OTP (One Time Passcode) has been sent. Please enter the OTP in the field below to verify your phone.',
-				];
-			} else {
+                if ($sms_response->error === 0) {
+                        // save info in database for later verification
+                        if ($this->log_login_register_action(
+                                $user_phone,
+                                $otp_code
+                        )) {
+                                if ($is_checkout_request && !is_user_logged_in()) {
+                                        $this->record_checkout_otp_request();
+                                }
+                                $response = [
+                                        'status'  => 200,
+                                        'message' => 'A OTP (One Time Passcode) has been sent. Please enter the OTP in the field below to verify your phone.',
+                                ];
+                        } else {
 				$response = ['status' => 400, 'message' => __('Error occurred while sending OTP. Please try again.')];
 			}
 
@@ -358,7 +387,135 @@ class Alpha_sms_Public
                 $snapshot = $this->get_transient_otp_data();
 
                 return !empty($snapshot['alpha_sms_otp_code']);
-	}
+        }
+
+        /**
+         * Determine whether the visitor has reached the OTP request limit for guest checkout.
+         *
+         * @return bool
+         */
+        private function is_checkout_rate_limited()
+        {
+                $now      = $this->get_current_timestamp();
+                $requests = $this->filter_checkout_otp_requests($now);
+
+                $this->persist_checkout_otp_requests($requests, $now);
+
+                return count($requests) >= $this->get_checkout_rate_limit();
+        }
+
+        /**
+         * Record a successful OTP request for guest checkout.
+         */
+        private function record_checkout_otp_request()
+        {
+                $now      = $this->get_current_timestamp();
+                $requests = $this->filter_checkout_otp_requests($now);
+
+                $requests[] = $now;
+
+                $limit = $this->get_checkout_rate_limit();
+
+                if (count($requests) > $limit) {
+                        $requests = array_slice($requests, -$limit);
+                }
+
+                $this->persist_checkout_otp_requests($requests, $now);
+        }
+
+        /**
+         * Retrieve the maximum number of OTP requests allowed in the rate limit window.
+         *
+         * @return int
+         */
+        private function get_checkout_rate_limit()
+        {
+                return (int) $this->checkoutOtpRateLimit;
+        }
+
+        /**
+         * Retrieve the guest checkout OTP rate limit window in seconds.
+         *
+         * @return int
+         */
+        private function get_checkout_rate_window()
+        {
+                return (int) $this->checkoutOtpRateWindow;
+        }
+
+        /**
+         * Fetch stored OTP request timestamps for guest checkout.
+         *
+         * @return array
+         */
+        private function get_checkout_otp_requests()
+        {
+                $data = $this->get_transient_otp_data();
+
+                if (empty($data['alpha_sms_checkout_otp_requests']) || !is_array($data['alpha_sms_checkout_otp_requests'])) {
+                        return [];
+                }
+
+                return array_map('intval', $data['alpha_sms_checkout_otp_requests']);
+        }
+
+        /**
+         * Remove OTP request timestamps that fall outside the rate limit window.
+         *
+         * @param int $now
+         *
+         * @return array
+         */
+        private function filter_checkout_otp_requests($now)
+        {
+                $window   = $this->get_checkout_rate_window();
+                $earliest = $now - $window;
+
+                $requests = $this->get_checkout_otp_requests();
+                $filtered = [];
+
+                foreach ($requests as $request) {
+                        if ($request >= $earliest) {
+                                $filtered[] = $request;
+                        }
+                }
+
+                return array_values($filtered);
+        }
+
+        /**
+         * Persist filtered OTP request timestamps back to the transient store.
+         *
+         * @param array $requests
+         * @param int   $now
+         */
+        private function persist_checkout_otp_requests(array $requests, $now)
+        {
+                $expiryTimestamp = $now + $this->get_checkout_rate_window();
+                $expires_at      = date('Y-m-d H:i:s', $expiryTimestamp);
+
+                $data = [
+                        'alpha_sms_checkout_otp_requests' => $requests,
+                ];
+
+                $this->set_transient_otp_data($data, $expires_at);
+        }
+
+        /**
+         * Resolve the current timestamp for rate limiting operations.
+         *
+         * @return int
+         */
+        private function get_current_timestamp()
+        {
+                $timestamp = defined('ALPHA_SMS_TIMESTAMP') ? strtotime(ALPHA_SMS_TIMESTAMP) : time();
+
+                if (!$timestamp) {
+                        $timestamp = time();
+                }
+
+                return $timestamp;
+        }
 
 	/**
 	 * Verify otp and register the user
