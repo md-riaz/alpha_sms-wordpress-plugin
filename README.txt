@@ -59,6 +59,10 @@ Yes. OTP verification for WordPress and WooCommerce registration and login works
 
 == Changelog ==
 
+= 1.0.12 =
+* Added a background processor so campaign SMS messages are queued individually and sent by scheduled jobs.
+* Aggregated campaign job results into concise admin notices that highlight failed numbers and the most recent error.
+
 = 1.0.11 =
 * Updated the WooCommerce checkout OTP workflow to clone whichever submit button is present instead of relying on the `#place_order` ID so guest checkout themes remain compatible.
 * Simplified OTP storage to rely solely on WordPress transients instead of WooCommerce sessions.

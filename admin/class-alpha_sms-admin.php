@@ -45,17 +45,52 @@ class Alpha_sms_Admin
     private $version;
 
     /**
+     * Background processor for queued SMS jobs.
+     *
+     * @var Alpha_SMS_Background|null
+     */
+    private $background;
+
+    /**
      * Initialize the class and set its properties.
      *
-     * @param string $plugin_name The name of this plugin.
-     * @param string $version The version of this plugin.
+     * @param string                    $plugin_name The name of this plugin.
+     * @param string                    $version     The version of this plugin.
+     * @param Alpha_SMS_Background|null $background  Optional background processor instance.
      * @since    1.0.0
      */
-    public function __construct($plugin_name, $version)
+    public function __construct($plugin_name, $version, $background = null)
     {
 
         $this->plugin_name = $plugin_name;
         $this->version = $version;
+        $this->background = $background;
+    }
+
+    /**
+     * Set the background processor instance.
+     *
+     * @param Alpha_SMS_Background|null $background Background processor.
+     *
+     * @return void
+     */
+    public function set_background_processor($background)
+    {
+        $this->background = $background;
+    }
+
+    /**
+     * Retrieve the background processor instance.
+     *
+     * @return Alpha_SMS_Background|null
+     */
+    private function get_background_processor()
+    {
+        if ($this->background instanceof Alpha_SMS_Background) {
+            return $this->background;
+        }
+
+        return null;
     }
 
     /**
@@ -300,14 +335,14 @@ class Alpha_sms_Admin
             $this->add_flash_notice(__("Fill the required fields properly", $this->plugin_name), "error");
 
             // Redirect to plugin page
-            wp_redirect($_SERVER['HTTP_REFERER']);
+            wp_safe_redirect(wp_get_referer());
             exit();
         }
         if (!$api_key) {
             $this->add_flash_notice(__("No valid API Key is set.", $this->plugin_name), "error");
 
             // Redirect to plugin page
-            wp_redirect($_SERVER['HTTP_REFERER']);
+            wp_safe_redirect(wp_get_referer());
             exit();
         }
 
@@ -321,30 +356,70 @@ class Alpha_sms_Admin
             $numbersArr = array_merge($numbersArr, $woo_numbers);
         }
 
-        // Final Numbers
-        $numbers = implode(',', $numbersArr);
+        $numbersArr = array_map('trim', $numbersArr);
+        $numbersArr = array_filter($numbersArr);
+        $numbersArr = array_unique($numbersArr);
 
-        require_once ALPHA_SMS_PATH . 'includes/sms.class.php';
+        if (empty($numbersArr)) {
+            $this->add_flash_notice(__("No valid recipients were provided.", $this->plugin_name), "error");
 
-        $sms = new AlphaSMS($api_key);
-        $sms->numbers = $numbers;
-        $sms->body = $body;
-        $sms->sender_id = $sender_id;
+            // Redirect to plugin page
+            wp_safe_redirect(wp_get_referer());
+            exit();
+        }
 
-        $response = $sms->Send();
+        $background = $this->get_background_processor();
 
-        if (!$response) {
-            $this->add_flash_notice(__("Something went wrong, please try again.", $this->plugin_name), "error");
+        if (!$background) {
+            $this->add_flash_notice(__("Background processing is unavailable. Please try again later.", $this->plugin_name),
+                "error");
 
-        } elseif ($response->error !== 0) {
-            $this->add_flash_notice(__($response->msg), 'error');
+            // Redirect to plugin page
+            wp_safe_redirect(wp_get_referer());
+            exit();
+        }
 
-        } else {
-            $this->add_flash_notice(__($response->msg), 'success');
+        $queued = 0;
+        $failedQueue = [];
+
+        foreach ($numbersArr as $number) {
+            if ($background->dispatch($number, $body, $sender_id, $api_key)) {
+                $queued++;
+            } else {
+                $failedQueue[] = $number;
+            }
+        }
+
+        if ($queued > 0) {
+            $notice = sprintf(
+                _n('Queued %d SMS message for background sending.', 'Queued %d SMS messages for background sending.', $queued,
+                    $this->plugin_name),
+                $queued
+            );
+            $this->add_flash_notice(esc_html($notice), 'success');
+        }
+
+        if (!empty($failedQueue)) {
+            $failedQueue = array_map('sanitize_text_field', $failedQueue);
+            $preview = array_slice($failedQueue, 0, 5);
+            $summary = implode(', ', $preview);
+            if ('' === trim($summary)) {
+                $summary = __('unknown recipients', $this->plugin_name);
+            }
+            $message = sprintf(
+                __('Unable to queue %1$d recipient(s): %2$s', $this->plugin_name),
+                count($failedQueue),
+                $summary
+            );
+            if (count($failedQueue) > count($preview)) {
+                $message .= ' ' . sprintf(__('and %d more.', $this->plugin_name), count($failedQueue) - count($preview));
+            }
+
+            $this->add_flash_notice(esc_html($message), 'error');
         }
 
         // Redirect to plugin page
-        wp_redirect($_SERVER['HTTP_REFERER']);
+        wp_safe_redirect(wp_get_referer());
         exit();
     }
 
@@ -391,6 +466,80 @@ class Alpha_sms_Admin
     }
 
     /**
+     * Persist job results as flash notices for display in the admin area.
+     *
+     * @return void
+     */
+    private function maybe_add_job_result_notice()
+    {
+        $results = get_option($this->plugin_name . '_job_results', []);
+
+        if (empty($results) || !is_array($results)) {
+            return;
+        }
+
+        $defaults = [
+            'success'    => 0,
+            'failed'     => 0,
+            'last_error' => '',
+            'failures'   => [],
+        ];
+
+        $results = wp_parse_args($results, $defaults);
+
+        if (!empty($results['success'])) {
+            $success_notice = sprintf(
+                _n('%d SMS message was sent successfully.', '%d SMS messages were sent successfully.', (int)$results['success'],
+                    $this->plugin_name),
+                (int)$results['success']
+            );
+            $this->add_flash_notice(esc_html($success_notice), 'success');
+        }
+
+        if (!empty($results['failed'])) {
+            $error_notice = sprintf(
+                _n('%d SMS message failed to send.', '%d SMS messages failed to send.', (int)$results['failed'],
+                    $this->plugin_name),
+                (int)$results['failed']
+            );
+
+            if (!empty($results['last_error'])) {
+                $error_notice .= ' ' . sprintf(__('Last error: %s', $this->plugin_name), $results['last_error']);
+            } elseif (!empty($results['failures']) && is_array($results['failures'])) {
+                $details = [];
+                foreach ($results['failures'] as $failure) {
+                    $number = isset($failure['number']) ? $failure['number'] : '';
+                    $message = isset($failure['message']) ? $failure['message'] : '';
+
+                    $detail_parts = [];
+                    $trimmed_number = trim($number);
+                    if ($trimmed_number !== '') {
+                        $detail_parts[] = $trimmed_number;
+                    }
+                    if ($message !== '') {
+                        $detail_parts[] = $message;
+                    }
+
+                    if (!empty($detail_parts)) {
+                        $details[] = implode(' - ', $detail_parts);
+                    }
+                }
+
+                if (!empty($details)) {
+                    $error_notice .= ' ' . sprintf(
+                        _n('Latest error: %s', 'Latest errors: %s', count($details), $this->plugin_name),
+                        implode('; ', $details)
+                    );
+                }
+            }
+
+            $this->add_flash_notice(esc_html($error_notice), 'error');
+        }
+
+        delete_option($this->plugin_name . '_job_results');
+    }
+
+    /**
      * Function executed when the 'admin_notices' action is called, here we check if there are notices on
      * our database and display them, after that, we remove the option to prevent notices being displayed forever.
      * @return void
@@ -398,6 +547,8 @@ class Alpha_sms_Admin
 
     public function display_flash_notices()
     {
+        $this->maybe_add_job_result_notice();
+
         $notices = get_option($this->plugin_name . '_notices', []);
 
         // Iterate through our notices to be displayed and print them.

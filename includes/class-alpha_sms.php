@@ -76,7 +76,7 @@ class Alpha_sms
         if (defined('ALPHA_SMS_VERSION')) {
             $this->version = ALPHA_SMS_VERSION;
         } else {
-            $this->version = '1.0.0';
+            $this->version = '1.0.12';
         }
         $this->plugin_name = 'alpha_sms';
 
@@ -110,6 +110,11 @@ class Alpha_sms
          * core plugin.
          */
         require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-alpha_sms-loader.php';
+
+        /**
+         * Background processing utilities.
+         */
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-alpha_sms-background.php';
 
         /**
          * The class responsible for defining internationalization functionality
@@ -158,7 +163,10 @@ class Alpha_sms
     private function define_admin_hooks()
     {
 
-        $plugin_admin = new Alpha_sms_Admin($this->get_plugin_name(), $this->get_version());
+        $background = new Alpha_SMS_Background($this->get_plugin_name());
+        $plugin_admin = new Alpha_sms_Admin($this->get_plugin_name(), $this->get_version(), $background);
+
+        $this->loader->add_action(Alpha_SMS_Background::ACTION_HOOK, $background, 'alpha_sms_send_single_sms', 10, 1);
 
         $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
         $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
