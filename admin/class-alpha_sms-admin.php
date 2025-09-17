@@ -54,8 +54,9 @@ class Alpha_sms_Admin
     /**
      * Initialize the class and set its properties.
      *
-     * @param string $plugin_name The name of this plugin.
-     * @param string $version The version of this plugin.
+     * @param string                    $plugin_name The name of this plugin.
+     * @param string                    $version     The version of this plugin.
+     * @param Alpha_SMS_Background|null $background  Optional background processor instance.
      * @since    1.0.0
      */
     public function __construct($plugin_name, $version, $background = null)
@@ -334,14 +335,14 @@ class Alpha_sms_Admin
             $this->add_flash_notice(__("Fill the required fields properly", $this->plugin_name), "error");
 
             // Redirect to plugin page
-            wp_redirect($_SERVER['HTTP_REFERER']);
+            wp_safe_redirect(wp_get_referer());
             exit();
         }
         if (!$api_key) {
             $this->add_flash_notice(__("No valid API Key is set.", $this->plugin_name), "error");
 
             // Redirect to plugin page
-            wp_redirect($_SERVER['HTTP_REFERER']);
+            wp_safe_redirect(wp_get_referer());
             exit();
         }
 
@@ -363,7 +364,7 @@ class Alpha_sms_Admin
             $this->add_flash_notice(__("No valid recipients were provided.", $this->plugin_name), "error");
 
             // Redirect to plugin page
-            wp_redirect($_SERVER['HTTP_REFERER']);
+            wp_safe_redirect(wp_get_referer());
             exit();
         }
 
@@ -374,7 +375,7 @@ class Alpha_sms_Admin
                 "error");
 
             // Redirect to plugin page
-            wp_redirect($_SERVER['HTTP_REFERER']);
+            wp_safe_redirect(wp_get_referer());
             exit();
         }
 
@@ -418,7 +419,7 @@ class Alpha_sms_Admin
         }
 
         // Redirect to plugin page
-        wp_redirect($_SERVER['HTTP_REFERER']);
+        wp_safe_redirect(wp_get_referer());
         exit();
     }
 
@@ -509,13 +510,18 @@ class Alpha_sms_Admin
                 foreach ($results['failures'] as $failure) {
                     $number = isset($failure['number']) ? $failure['number'] : '';
                     $message = isset($failure['message']) ? $failure['message'] : '';
-                    $detail = trim($number);
+
+                    $detail_parts = [];
+                    $trimmed_number = trim($number);
+                    if ($trimmed_number !== '') {
+                        $detail_parts[] = $trimmed_number;
+                    }
                     if ($message !== '') {
-                        $detail .= $detail ? ' - ' . $message : $message;
+                        $detail_parts[] = $message;
                     }
 
-                    if ($detail !== '') {
-                        $details[] = $detail;
+                    if (!empty($detail_parts)) {
+                        $details[] = implode(' - ', $detail_parts);
                     }
                 }
 
