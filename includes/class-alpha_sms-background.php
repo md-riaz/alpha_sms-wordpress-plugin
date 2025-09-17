@@ -13,6 +13,7 @@ if (!defined('WPINC')) {
  *
  * @package    Alpha_sms
  * @subpackage Alpha_sms/includes
+ * @since      1.0.12 Introduced to queue individual SMS jobs for campaign sending.
  */
 class Alpha_SMS_Background
 {
@@ -40,6 +41,8 @@ class Alpha_SMS_Background
 
     /**
      * Queue a single SMS job.
+     *
+     * @since 1.0.12
      *
      * @param string $number    Recipient phone number.
      * @param string $body      Message body.
@@ -79,6 +82,8 @@ class Alpha_SMS_Background
 
     /**
      * Process a queued SMS job.
+     *
+     * @since 1.0.12
      *
      * @param array $payload Job payload data.
      *
@@ -125,6 +130,8 @@ class Alpha_SMS_Background
 
     /**
      * Store job results for later display in the admin area.
+     *
+     * @since 1.0.12
      *
      * @param array $payload  Job payload data.
      * @param mixed $response Response from the API.
@@ -185,6 +192,8 @@ class Alpha_SMS_Background
     /**
      * Determine if the API response indicates a successful send.
      *
+     * @since 1.0.12
+     *
      * @param mixed $response Response data.
      *
      * @return bool
@@ -209,6 +218,8 @@ class Alpha_SMS_Background
     /**
      * Extract an error message from the response.
      *
+     * @since 1.0.12
+     *
      * @param mixed $response Response data.
      *
      * @return string
@@ -230,6 +241,8 @@ class Alpha_SMS_Background
 
     /**
      * Normalize a phone number string.
+     *
+     * @since 1.0.12
      *
      * @param string $number Raw phone number input.
      *
