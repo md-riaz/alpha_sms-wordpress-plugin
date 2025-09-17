@@ -366,51 +366,28 @@ function copyCheckoutButtonStyles(originalButton, proxyButton) {
    }
 
    const computed = window.getComputedStyle(originalNode);
-   const properties = [
-      'backgroundColor',
-      'backgroundImage',
-      'backgroundPosition',
-      'backgroundRepeat',
-      'backgroundSize',
-      'border',
-      'borderBottom',
-      'borderLeft',
-      'borderRight',
-      'borderTop',
-      'borderRadius',
-      'boxShadow',
-      'color',
-      'display',
-      'fontFamily',
-      'fontSize',
-      'fontWeight',
-      'letterSpacing',
-      'lineHeight',
-      'margin',
-      'padding',
-      'textAlign',
-      'textDecoration',
-      'textTransform',
-      'textShadow',
-      'verticalAlign',
-      'whiteSpace',
-   ];
 
    proxyNode.style.cssText = '';
 
-   properties.forEach(function (property) {
-      const value = computed.getPropertyValue(property);
+   for (let i = 0; i < computed.length; i++) {
+      const propertyName = computed[i];
 
-      if (!value || (property === 'display' && value === 'none')) {
-         return;
+      if (!propertyName) {
+         continue;
+      }
+
+      const value = computed.getPropertyValue(propertyName);
+
+      if (!value || (propertyName === 'display' && value === 'none')) {
+         continue;
       }
 
       proxyNode.style.setProperty(
-         property,
+         propertyName,
          value,
-         computed.getPropertyPriority(property)
+         computed.getPropertyPriority(propertyName)
       );
-   });
+   }
 }
 
 function createCheckoutProxyButton(originalButton) {
@@ -425,14 +402,6 @@ function createCheckoutProxyButton(originalButton) {
    } else {
       proxyButton = $('<button type="button"></button>');
    }
-
-   const originalClassAttr = originalButton.attr('class');
-
-   if (originalClassAttr) {
-      proxyButton.attr('class', originalClassAttr);
-   }
-
-   proxyButton.addClass('alpha-sms-place-order');
 
    copyCheckoutButtonAttributes(originalButton, proxyButton);
 
@@ -483,8 +452,6 @@ function initializeCheckoutSubmitProxy() {
    if (!originalButton.length) {
       return;
    }
-
-   checkout_form.find('.alpha-sms-place-order').remove();
 
    if (checkout_proxy_button && checkout_proxy_button.length) {
       checkout_proxy_button.off('click', WC_Checkout_SendOtp).remove();
