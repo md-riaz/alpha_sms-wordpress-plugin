@@ -2,7 +2,7 @@
 Contributors: alphanetbd, mdriazwd
 Tags: order notification, order SMS, woocommerce sms integration, sms plugin, mobile verification, OTP, SMS notifications, two-step verification, OTP verification, SMS, signup security, user verification, user security, SMS gateway, order SMS, order notifications, WordPress OTP, 2FA, login OTP, WP SMS
 Requires at least: 3.5
-Tested up to: 6.6.2
+Tested up to: 6.8.2
 Requires PHP: 5.6
 Stable tag: 1.0.12
 License: GPLv2 or later
