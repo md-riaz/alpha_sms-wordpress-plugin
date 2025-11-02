@@ -589,12 +589,20 @@ class Alpha_sms_Public
 	public function register_form_validation($errors, $sanitized_user_login, $user_email)
 	{
 
-		$enable_guest_checkout = get_option('woocommerce_enable_guest_checkout');
-		$enable_guest_checkout = $enable_guest_checkout === 'yes' ? true : false;
+                $enable_guest_checkout = get_option('woocommerce_enable_guest_checkout');
+                $enable_guest_checkout = $enable_guest_checkout === 'yes' ? true : false;
 
-		if (!$this->pluginActive || !$this->options['otp_checkout'] || $enable_guest_checkout) {
-			return $errors;
-		}
+                $action_type = isset($_REQUEST['action_type']) ? sanitize_text_field($_REQUEST['action_type']) : '';
+
+                $shouldValidate = $this->pluginActive && (
+                        (!empty($this->options['otp_checkout']) && !$enable_guest_checkout) ||
+                        (!empty($this->options['wc_reg']) && $action_type === 'wc_reg') ||
+                        (!empty($this->options['wp_reg']) && $action_type === 'wp_reg')
+                );
+
+                if (!$shouldValidate) {
+                        return $errors;
+                }
 
 		if (
 			empty($_REQUEST['billing_phone']) || !is_numeric($_REQUEST['billing_phone']) ||
