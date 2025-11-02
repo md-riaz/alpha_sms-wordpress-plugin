@@ -595,7 +595,7 @@ class Alpha_sms_Public
                 $action_type = isset($_REQUEST['action_type']) ? sanitize_text_field($_REQUEST['action_type']) : '';
 
                 $shouldValidate = $this->pluginActive && (
-                        ($this->options['otp_checkout'] && !$enable_guest_checkout) ||
+                        (!empty($this->options['otp_checkout']) && !$enable_guest_checkout) ||
                         (!empty($this->options['wc_reg']) && $action_type === 'wc_reg') ||
                         (!empty($this->options['wp_reg']) && $action_type === 'wp_reg')
                 );
