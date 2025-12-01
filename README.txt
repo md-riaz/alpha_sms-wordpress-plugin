@@ -1,8 +1,8 @@
 === Alpha SMS ===
 Contributors: alphanetbd, mdriazwd
-Tags: order notification, order SMS, woocommerce sms integration, sms plugin, mobile verification, OTP, SMS notifications, two-step verification, OTP verification, SMS, signup security, user verification, user security, SMS gateway, order SMS, order notifications, WordPress OTP, 2FA, login OTP, WP SMS
+Tags: order notification, woocommerce sms integration, two-step verification, OTP verification, SMS, signup security, user verification, SMS gateway
 Requires at least: 3.5
-Tested up to: 6.8.2
+Tested up to: 6.9
 Requires PHP: 5.6
 Stable tag: 1.0.13
 License: GPLv2 or later
