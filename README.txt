@@ -1,6 +1,6 @@
 === Alpha SMS ===
 Contributors: alphanetbd, mdriazwd
-Tags: order notification, woocommerce sms integration, two-step verification, OTP verification, SMS, signup security, user verification, SMS gateway
+Tags: order notification, woocommerce sms integration, two-step verification, OTP verification, SMS gateway
 Requires at least: 3.5
 Tested up to: 6.9
 Requires PHP: 5.6
@@ -8,7 +8,7 @@ Stable tag: 1.0.13
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Alpha SMS connects your WordPress and WooCommerce store with the Alpha SMS platform to deliver OTP verification, transactional messaging, and order notifications for Bangladeshi mobile numbers.
+Connect your WordPress and WooCommerce store to Alpha SMS for OTP verification and order notifications in Bangladesh.
 
 == Description ==
 
