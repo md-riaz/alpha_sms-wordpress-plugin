@@ -111,11 +111,11 @@ class Alpha_SMS_Background
             return;
         }
 
-        if (!class_exists('AlphaSMS')) {
+        if (!class_exists('Alpha_SMS_Class')) {
             require_once plugin_dir_path(__FILE__) . 'sms.class.php';
         }
 
-        $sms = new AlphaSMS($api_key);
+        $sms = new Alpha_SMS_Class($api_key);
         $sms->numbers = $number;
         $sms->body = $body;
 
@@ -233,7 +233,8 @@ class Alpha_SMS_Background
         } elseif (is_array($response) && isset($response['msg'])) {
             $message = (string)$response['msg'];
         } else {
-            $message = __('Unknown error while sending SMS.', $this->plugin_name);
+            /* translators: Error message shown when SMS sending fails for unknown reason. */
+            $message = __('Unknown error while sending SMS.', 'alpha-sms');
         }
 
         return wp_strip_all_tags($message);

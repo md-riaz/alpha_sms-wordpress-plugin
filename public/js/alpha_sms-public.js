@@ -121,6 +121,7 @@ function WC_Reg_SendOtp(e) {
    let phone = wc_reg_form.find('#reg_billing_phone').val();
    let email = wc_reg_form.find('#reg_email').val();
    let password = wc_reg_form.find('#reg_password').val();
+   let wc_reg_phone_nonce = wc_reg_form.find('#wc_reg_phone_nonce').val();
 
    if (!phone || !email) {
       alert_wrapper.html(showError('Fill in the required fields.'));
@@ -137,7 +138,8 @@ function WC_Reg_SendOtp(e) {
    let data = {
       action: 'wc_send_otp', //calls wp_ajax_nopriv_wc_send_otp
       billing_phone: phone,
-      email: email
+      email: email,
+      wc_reg_phone_nonce: wc_reg_phone_nonce,
    };
 
    if (password) {

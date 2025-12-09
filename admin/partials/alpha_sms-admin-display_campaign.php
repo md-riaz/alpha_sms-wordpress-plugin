@@ -21,52 +21,55 @@ if (!defined('WPINC')) {
 <!-- This file should primarily consist of HTML with a little bit of PHP. -->
 <div class="wrap">
     <h2>
-        <span class="dashicons dashicons-format-status"></span> <?php esc_attr_e('SMS Campaign', $this->plugin_name); ?>
+        <span class="dashicons dashicons-format-status"></span> <?php esc_attr_e('SMS Campaign', 'alpha-sms'); ?>
     </h2>
 
     <?php
     //Grab all options
-    $options = get_option($this->plugin_name);
+    $alpha_sms_options = get_option($this->plugin_name);
 
-    $balance = '';
+    $alpha_sms_balance = '';
 
-    if (!$options || empty($options['api_key'])) {
-        $balance = 'Please configure SMS API first.';
+    if (!$alpha_sms_options || empty($alpha_sms_options['api_key'])) {
+        $alpha_sms_balance = 'Please configure SMS API first.';
     } else {
         require_once ALPHA_SMS_PATH. 'includes/sms.class.php';
 
-        $smsPortal = new AlphaSMS($options['api_key']);
 
-        $response = $smsPortal->getBalance();
+        $alpha_sms_smsPortal = new Alpha_SMS_Class($alpha_sms_options['api_key']);
 
-        if ($response && $response->error === 0) {
-            $balance = $response->data->balance;
-        } elseif ($response && $response->error === 405) {
-            $balance = 'Please configure SMS API first.';
+
+        $alpha_sms_response = $alpha_sms_smsPortal->getBalance();
+
+        if ($alpha_sms_response && $alpha_sms_response->error === 0) {
+            $alpha_sms_balance = $alpha_sms_response->data->balance;
+        } elseif ($alpha_sms_response && $alpha_sms_response->error === 405) {
+            $alpha_sms_balance = 'Please configure SMS API first.';
         } else {
-            $balance = 'Unknown Error, failed to fetch balance';
+            $alpha_sms_balance = 'Unknown Error, failed to fetch balance';
         }
     }
     ?>
 
-    <?php if (is_numeric($balance)): ?>
-        <p><strong>Balance:</strong> BDT <?php echo esc_html( number_format((float)$balance, 2, '.', ',') ) ?> </p>
+    <?php if (is_numeric($alpha_sms_balance)): ?>
+        <p><strong>Balance:</strong> BDT <?php echo esc_html( number_format((float)$alpha_sms_balance, 2, '.', ',') ) ?> </p>
     <?php else: ?>
-        <strong class='text-danger'><?php echo esc_html( $balance ) ?></strong>
+        <strong class='text-danger'><?php echo esc_html( $alpha_sms_balance ) ?></strong>
     <?php endif; ?>
 
     <!--   show notice when form submit -->
     <?php settings_errors(); ?>
 
     <form method="post" name=" <?php echo esc_attr( $this->plugin_name ); ?>"
-          action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-        <input type="hidden" name="action" value="<?php echo esc_attr( $this->plugin_name . '_campaign' ) ?>">
+                    action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                <input type="hidden" name="action" value="<?php echo esc_attr( $this->plugin_name . '_campaign' ) ?>">
+                <?php wp_nonce_field($this->plugin_name . '_send_campaign', $this->plugin_name . '[_wpnonce]'); ?>
 
         <!-- Phone Numbers -->
         <fieldset class="mb-2">
-            <p class="mb-2"><strong><?php esc_attr_e('Enter Phone Numbers', $this->plugin_name); ?></strong></p>
+            <p class="mb-2"><strong><?php esc_attr_e('Enter Phone Numbers', 'alpha-sms'); ?></strong></p>
             <legend class="screen-reader-text">
-                <span><?php esc_attr_e( 'Enter Phone Numbers', $this->plugin_name ); ?></span>
+                <span><?php esc_attr_e( 'Enter Phone Numbers', 'alpha-sms' ); ?></span>
             </legend>
             <textarea
                     class="d-block"
@@ -80,20 +83,20 @@ if (!defined('WPINC')) {
         <!-- Checkbox -->
         <fieldset>
             <legend class="screen-reader-text">
-                <span><?php esc_attr_e('Include all customers', $this->plugin_name); ?></span>
+                <span><?php esc_attr_e('Include all customers', 'alpha-sms'); ?></span>
             </legend>
             <label for="<?php echo esc_attr( $this->plugin_name . '-all_users' ); ?>">
                 <input type="checkbox" id="<?php echo esc_attr( $this->plugin_name . '-all_users' ); ?>"
                        name="<?php echo esc_attr( $this->plugin_name . '[all_users]' ); ?>" value="1"/>
-                <span><?php esc_attr_e( 'Include all customers', $this->plugin_name ); ?></span>
+                <span><?php esc_attr_e( 'Include all customers', 'alpha-sms' ); ?></span>
             </label>
         </fieldset>
 
         <!-- SMS Body -->
         <fieldset>
-            <p class="mb-2"><strong><?php esc_attr_e( 'Enter SMS Content', $this->plugin_name ); ?></strong></p>
+            <p class="mb-2"><strong><?php esc_attr_e( 'Enter SMS Content', 'alpha-sms' ); ?></strong></p>
             <legend class="screen-reader-text">
-                <span><?php esc_attr_e( 'Enter SMS Content', $this->plugin_name ); ?></span>
+                <span><?php esc_attr_e( 'Enter SMS Content', 'alpha-sms' ); ?></span>
             </legend>
             <textarea
                     class="d-block"
@@ -105,6 +108,6 @@ if (!defined('WPINC')) {
         </fieldset>
 
 
-        <?php submit_button(__('Send SMS', $this->plugin_name), 'primary', 'submit', true); ?>
+        <?php submit_button(__('Send SMS', 'alpha-sms'), 'primary', 'submit', true); ?>
     </form>
 </div>

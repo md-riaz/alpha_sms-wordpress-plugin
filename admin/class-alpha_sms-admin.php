@@ -113,8 +113,13 @@ class Alpha_sms_Admin
          * class.
          */
 
-        wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/alpha_sms-admin.css', [], $this->version,
-            'all');
+        wp_enqueue_style(
+            $this->plugin_name,
+            plugin_dir_url(__FILE__) . 'css/alpha_sms-admin.css',
+            [],
+            $this->version,
+            'all'
+        );
     }
 
     /**
@@ -137,8 +142,13 @@ class Alpha_sms_Admin
          * class.
          */
 
-        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/alpha_sms-admin.js', ['jquery'],
-            $this->version, false);
+        wp_enqueue_script(
+            $this->plugin_name,
+            plugin_dir_url(__FILE__) . 'js/alpha_sms-admin.js',
+            ['jquery'],
+            $this->version,
+            false
+        );
     }
 
     /**
@@ -180,11 +190,23 @@ class Alpha_sms_Admin
             76
         );
 
-        add_submenu_page($this->plugin_name, 'SMS Campaign', 'Campaign', 'manage_options', $this->plugin_name,
-            [$this, 'display_campaign_page']);
+        add_submenu_page(
+            $this->plugin_name,
+            'SMS Campaign',
+            'Campaign',
+            'manage_options',
+            $this->plugin_name,
+            [$this, 'display_campaign_page']
+        );
 
-        add_submenu_page($this->plugin_name, 'Alpha SMS Settings', 'Settings', 'manage_options',
-            $this->plugin_name . '_settings', [$this, 'display_setting_page']);
+        add_submenu_page(
+            $this->plugin_name,
+            'Alpha SMS Settings',
+            'Settings',
+            'manage_options',
+            $this->plugin_name . '_settings',
+            [$this, 'display_setting_page']
+        );
     }
 
     /**
@@ -201,8 +223,10 @@ class Alpha_sms_Admin
          * For custom post type you have to change 'plugins.php?page=' to 'edit.php?post_type=your_custom_post_type&page='
          */
         $settings_link = [
-            '<a href="' . admin_url('admin.php?page=' . $this->plugin_name . '_settings') . '">' . __('Settings',
-                $this->plugin_name) . '</a>',
+            '<a href="' . admin_url('admin.php?page=' . $this->plugin_name . '_settings') . '">' . __(
+                'Settings',
+                'alpha-sms'
+            ) . '</a>',
         ];
 
         // -- OR --
@@ -224,7 +248,6 @@ class Alpha_sms_Admin
         if (!empty($input['api_key']) && strpos(esc_attr($input['api_key']), str_repeat('*', 24), '12')) {
 
             $input['api_key'] = $options['api_key'];
-
         }
 
         $options['api_key'] = (isset($input['api_key']) && !empty($input['api_key'])) ? esc_attr($input['api_key']) : '';
@@ -246,7 +269,7 @@ class Alpha_sms_Admin
         $options['order_status_refunded'] = (isset($input['order_status_refunded']) && !empty($input['order_status_refunded'])) ? 1 : 0;
         $options['order_status_failed'] = (isset($input['order_status_failed']) && !empty($input['order_status_failed'])) ? 1 : 0;
         $options['order_status_admin'] = (isset($input['order_status_admin']) && !empty($input['order_status_admin'])) ? 1 : 0;
-        
+
         $options['ORDER_STATUS_PENDING_SMS'] = (isset($input['ORDER_STATUS_PENDING_SMS']) && !empty($input['ORDER_STATUS_PENDING_SMS'])) ? esc_attr($input['ORDER_STATUS_PENDING_SMS']) : '';
         $options['ORDER_STATUS_PROCESSING_SMS'] = (isset($input['ORDER_STATUS_PROCESSING_SMS']) && !empty($input['ORDER_STATUS_PROCESSING_SMS'])) ? esc_attr($input['ORDER_STATUS_PROCESSING_SMS']) : '';
         $options['ORDER_STATUS_ON_HOLD_SMS'] = (isset($input['ORDER_STATUS_ON_HOLD_SMS']) && !empty($input['ORDER_STATUS_ON_HOLD_SMS'])) ? esc_attr($input['ORDER_STATUS_ON_HOLD_SMS']) : '';
@@ -255,28 +278,28 @@ class Alpha_sms_Admin
         $options['ORDER_STATUS_REFUNDED_SMS'] = (isset($input['ORDER_STATUS_REFUNDED_SMS']) && !empty($input['ORDER_STATUS_REFUNDED_SMS'])) ? esc_attr($input['ORDER_STATUS_REFUNDED_SMS']) : '';
         $options['ORDER_STATUS_FAILED_SMS'] = (isset($input['ORDER_STATUS_FAILED_SMS']) && !empty($input['ORDER_STATUS_FAILED_SMS'])) ? esc_attr($input['ORDER_STATUS_FAILED_SMS']) : '';
         $options['ADMIN_STATUS_SMS'] = (isset($input['ADMIN_STATUS_SMS']) && !empty($input['ADMIN_STATUS_SMS'])) ? esc_attr($input['ADMIN_STATUS_SMS']) : '';
-       
+
         if (!$this->checkAPI($options['api_key'])) {
 
             $options['order_status'] =
-            $options['wp_reg'] =
-            $options['wp_login'] =
-            $options['wc_reg'] =
-            $options['wc_login'] =
-            $options['otp_checkout'] =
-            $options['order_status_pending'] =
-            $options['order_status_processing'] =
-            $options['order_status_on_hold'] =
-            $options['order_status_completed'] =
-            $options['order_status_cancelled'] =
-            $options['order_status_refunded'] =
-            $options['order_status_failed'] =
-            $options['order_status_admin'] = 0;
+                $options['wp_reg'] =
+                $options['wp_login'] =
+                $options['wc_reg'] =
+                $options['wc_login'] =
+                $options['otp_checkout'] =
+                $options['order_status_pending'] =
+                $options['order_status_processing'] =
+                $options['order_status_on_hold'] =
+                $options['order_status_completed'] =
+                $options['order_status_cancelled'] =
+                $options['order_status_refunded'] =
+                $options['order_status_failed'] =
+                $options['order_status_admin'] = 0;
 
             add_settings_error(
                 $this->plugin_name, // Slug title of setting
                 $this->plugin_name, // Slug-name , Used as part of 'id' attribute in HTML output.
-                __('Please configure a valid SMS API Key.', $this->plugin_name),
+                __('Please configure a valid SMS API Key.', 'alpha-sms'),
                 // message text, will be shown inside styled <div> and <p> tags
                 'error' // Message type, controls HTML class. Accepts 'error' or 'updated'.
             );
@@ -297,7 +320,7 @@ class Alpha_sms_Admin
 
         require_once ALPHA_SMS_PATH . 'includes/sms.class.php';
 
-        $smsPortal = new AlphaSMS($api_key);
+        $smsPortal = new Alpha_SMS_Class($api_key);
 
         $response = $smsPortal->getBalance();
 
@@ -319,11 +342,23 @@ class Alpha_sms_Admin
      */
     public function alpha_sms_send_campaign()
     {
-        $numbersArr = [];
+        // Nonce verification
+        if (!isset($_POST[$this->plugin_name]['_wpnonce'])) {
+            $this->add_flash_notice(__('Security check failed. Please try again.', 'alpha-sms'), 'error');
+            wp_safe_redirect(wp_get_referer());
+            exit();
+        }
+        $nonce = sanitize_text_field(wp_unslash($_POST[$this->plugin_name]['_wpnonce']));
+        if (!wp_verify_nonce($nonce, $this->plugin_name . '_send_campaign')) {
+            $this->add_flash_notice(__('Security check failed. Please try again.', 'alpha-sms'), 'error');
+            wp_safe_redirect(wp_get_referer());
+            exit();
+        }
 
-        $numbers = (isset($_POST[$this->plugin_name]['numbers']) && !empty($_POST[$this->plugin_name]['numbers'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['numbers']) : '';
+        $numbersArr = [];
+        $numbers = (isset($_POST[$this->plugin_name]['numbers']) && !empty($_POST[$this->plugin_name]['numbers'])) ? sanitize_textarea_field(wp_unslash($_POST[$this->plugin_name]['numbers'])) : '';
         $include_all_users = (isset($_POST[$this->plugin_name]['all_users']) && !empty($_POST[$this->plugin_name]['all_users'])) ? 1 : 0;
-        $body = (isset($_POST[$this->plugin_name]['body']) && !empty($_POST[$this->plugin_name]['body'])) ? sanitize_textarea_field($_POST[$this->plugin_name]['body']) : false;
+        $body = (isset($_POST[$this->plugin_name]['body']) && !empty($_POST[$this->plugin_name]['body'])) ? sanitize_textarea_field(wp_unslash($_POST[$this->plugin_name]['body'])) : false;
 
         //Grab all options
         $options = get_option($this->plugin_name);
@@ -332,16 +367,12 @@ class Alpha_sms_Admin
 
         // Empty body
         if (!$body) {
-            $this->add_flash_notice(__("Fill the required fields properly", $this->plugin_name), "error");
-
-            // Redirect to plugin page
+            $this->add_flash_notice(__("Fill the required fields properly", 'alpha-sms'), "error");
             wp_safe_redirect(wp_get_referer());
             exit();
         }
         if (!$api_key) {
-            $this->add_flash_notice(__("No valid API Key is set.", $this->plugin_name), "error");
-
-            // Redirect to plugin page
+            $this->add_flash_notice(__("No valid API Key is set.", 'alpha-sms'), "error");
             wp_safe_redirect(wp_get_referer());
             exit();
         }
@@ -361,9 +392,7 @@ class Alpha_sms_Admin
         $numbersArr = array_unique($numbersArr);
 
         if (empty($numbersArr)) {
-            $this->add_flash_notice(__("No valid recipients were provided.", $this->plugin_name), "error");
-
-            // Redirect to plugin page
+            $this->add_flash_notice(__("No valid recipients were provided.", 'alpha-sms'), "error");
             wp_safe_redirect(wp_get_referer());
             exit();
         }
@@ -371,10 +400,7 @@ class Alpha_sms_Admin
         $background = $this->get_background_processor();
 
         if (!$background) {
-            $this->add_flash_notice(__("Background processing is unavailable. Please try again later.", $this->plugin_name),
-                "error");
-
-            // Redirect to plugin page
+            $this->add_flash_notice(__("Background processing is unavailable. Please try again later.", 'alpha-sms'), "error");
             wp_safe_redirect(wp_get_referer());
             exit();
         }
@@ -391,9 +417,10 @@ class Alpha_sms_Admin
         }
 
         if ($queued > 0) {
+            /* translators: %d is the number of SMS messages queued for background sending. */
             $notice = sprintf(
-                _n('Queued %d SMS message for background sending.', 'Queued %d SMS messages for background sending.', $queued,
-                    $this->plugin_name),
+                /* translators: %d is the number of SMS messages queued for background sending. */
+                _n('Queued %d SMS message for background sending.', 'Queued %d SMS messages for background sending.', $queued, 'alpha-sms'),
                 $queued
             );
             $this->add_flash_notice(esc_html($notice), 'success');
@@ -404,15 +431,20 @@ class Alpha_sms_Admin
             $preview = array_slice($failedQueue, 0, 5);
             $summary = implode(', ', $preview);
             if ('' === trim($summary)) {
-                $summary = __('unknown recipients', $this->plugin_name);
+                /* translators: This is a summary of unknown recipients that could not be queued. */
+                $summary = __('unknown recipients', 'alpha-sms');
             }
+
             $message = sprintf(
-                __('Unable to queue %1$d recipient(s): %2$s', $this->plugin_name),
+                /* translators: %1$d is the number of recipients that could not be queued, %2$s is a summary of the failure. */
+                __('Unable to queue %1$d recipient(s): %2$s', 'alpha-sms'),
                 count($failedQueue),
                 $summary
             );
+            /* translators: %d: The number of additional failed items not shown in the preview. */
             if (count($failedQueue) > count($preview)) {
-                $message .= ' ' . sprintf(__('and %d more.', $this->plugin_name), count($failedQueue) - count($preview));
+                /* translators: %d is the number of additional failed items not shown in the preview. */
+                $message .= ' ' . sprintf(__('and %d more.', 'alpha-sms'), count($failedQueue) - count($preview));
             }
 
             $this->add_flash_notice(esc_html($message), 'error');
@@ -454,15 +486,22 @@ class Alpha_sms_Admin
     {
         global $wpdb;
 
-        // return $wpdb->get_col( "SELECT DISTINCT meta_value FROM `{$wpdb->prefix}postmeta` WHERE meta_key = '_billing_phone'" );
-
-        return $wpdb->get_col("
-        SELECT DISTINCT um.meta_value FROM {$wpdb->prefix}users as u
-        INNER JOIN {$wpdb->prefix}usermeta as um ON um.user_id = u.ID
-        INNER JOIN {$wpdb->prefix}usermeta as um2 ON um2.user_id = u.ID
-        WHERE um.meta_key LIKE 'billing_phone' AND um.meta_value != ''
-        AND um2.meta_key LIKE 'wp_capabilities' AND um2.meta_value NOT LIKE '%administrator%'
-    ");
+        $cache_key = 'alpha_sms_customers_phone';
+        $phones = wp_cache_get($cache_key, 'alpha_sms');
+        if ($phones === false) {
+            // Direct database query is required to efficiently filter users by meta value and role.
+            // WordPress functions like get_users() do not support this combined filtering in a single query.
+            // Caching is implemented to mitigate performance impact and reduce repeated queries.
+            $phones = $wpdb->get_col("
+                SELECT DISTINCT um.meta_value FROM {$wpdb->prefix}users as u
+                INNER JOIN {$wpdb->prefix}usermeta as um ON um.user_id = u.ID
+                INNER JOIN {$wpdb->prefix}usermeta as um2 ON um2.user_id = u.ID
+                WHERE um.meta_key LIKE 'billing_phone' AND um.meta_value != ''
+                AND um2.meta_key LIKE 'wp_capabilities' AND um2.meta_value NOT LIKE '%administrator%'
+            ");
+            wp_cache_set($cache_key, $phones, 'alpha_sms', HOUR_IN_SECONDS);
+        }
+        return $phones;
     }
 
     /**
@@ -489,8 +528,13 @@ class Alpha_sms_Admin
 
         if (!empty($results['success'])) {
             $success_notice = sprintf(
-                _n('%d SMS message was sent successfully.', '%d SMS messages were sent successfully.', (int)$results['success'],
-                    $this->plugin_name),
+                /* translators: %d is the number of SMS messages sent successfully. */
+                _n(
+                    '%d SMS message was sent successfully.',
+                    '%d SMS messages were sent successfully.',
+                    (int)$results['success'],
+                    'alpha-sms'
+                ),
                 (int)$results['success']
             );
             $this->add_flash_notice(esc_html($success_notice), 'success');
@@ -498,13 +542,22 @@ class Alpha_sms_Admin
 
         if (!empty($results['failed'])) {
             $error_notice = sprintf(
-                _n('%d SMS message failed to send.', '%d SMS messages failed to send.', (int)$results['failed'],
-                    $this->plugin_name),
+                /* translators: %d is the number of SMS messages that failed to send. */
+                _n(
+                    '%d SMS message failed to send.',
+                    '%d SMS messages failed to send.',
+                    (int)$results['failed'],
+                    'alpha-sms'
+                ),
                 (int)$results['failed']
             );
 
             if (!empty($results['last_error'])) {
-                $error_notice .= ' ' . sprintf(__('Last error: %s', $this->plugin_name), $results['last_error']);
+                $error_notice .= ' ' . sprintf(
+                    /* translators: %s is the last error message. */
+                    __('Last error: %s', 'alpha-sms'),
+                    $results['last_error']
+                );
             } elseif (!empty($results['failures']) && is_array($results['failures'])) {
                 $details = [];
                 foreach ($results['failures'] as $failure) {
@@ -527,7 +580,8 @@ class Alpha_sms_Admin
 
                 if (!empty($details)) {
                     $error_notice .= ' ' . sprintf(
-                        _n('Latest error: %s', 'Latest errors: %s', count($details), $this->plugin_name),
+                        /* translators: %s will be replaced with the error details (single or multiple, separated by semicolons). The singular ('Latest error: %s') and plural ('Latest errors: %s') forms are used depending on the number of errors. */
+                        _n('Latest error: %s', 'Latest errors: %s', count($details), 'alpha-sms'),
                         implode('; ', $details)
                     );
                 }
@@ -553,10 +607,11 @@ class Alpha_sms_Admin
 
         // Iterate through our notices to be displayed and print them.
         foreach ($notices as $notice) {
-            printf('<div class="notice notice-%1$s %2$s"><p>%3$s</p></div>',
-                $notice['type'],
-                $notice['dismissible'],
-                $notice['notice']
+            printf(
+                '<div class="notice notice-%1$s %2$s"><p>%3$s</p></div>',
+                esc_attr($notice['type']),
+                esc_attr($notice['dismissible']),
+                esc_html($notice['notice'])
             );
         }
 
@@ -565,5 +620,4 @@ class Alpha_sms_Admin
             delete_option($this->plugin_name . '_notices', []);
         }
     }
-
 }

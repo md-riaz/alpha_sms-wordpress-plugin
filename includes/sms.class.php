@@ -5,7 +5,7 @@ if (!defined('WPINC')) {
     die;
 }
 
-class AlphaSMS
+class Alpha_SMS_Class
 {
 
     public $numbers;
@@ -34,10 +34,6 @@ class AlphaSMS
         ];
 
         $response = $this->sendRequest($this->api_url . '/sendsms', 'POST', $postFields);
-
-
-
-
 
         return json_decode($response);
 
