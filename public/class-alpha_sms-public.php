@@ -97,13 +97,15 @@ class Alpha_sms_Public
          * class.
          */
 
-        wp_enqueue_style(
-            $this->plugin_name,
-            plugin_dir_url(__FILE__) . 'css/alpha_sms-public.css',
-            [],
-            $this->version,
-            'all'
-        );
+        if ($this->pluginActive) {
+            wp_enqueue_style(
+                $this->plugin_name,
+                plugin_dir_url(__FILE__) . 'css/alpha_sms-public.css',
+                [],
+                $this->version,
+                'all'
+            );
+        }
     }
 
     /**
@@ -125,20 +127,26 @@ class Alpha_sms_Public
          * class.
          */
 
-        wp_enqueue_script(
-            $this->plugin_name,
-            plugin_dir_url(__FILE__) . 'js/alpha_sms-public.js',
-            ['jquery'],
-            $this->version,
-            false
-        );
+        if ($this->pluginActive) {
+            wp_enqueue_script(
+                $this->plugin_name,
+                plugin_dir_url(__FILE__) . 'js/alpha_sms-public.js',
+                ['jquery'],
+                $this->version,
+                false
+            );
 
-        // adding a js variable for ajax form submit url
-        wp_localize_script(
-            $this->plugin_name,
-            $this->plugin_name . '_object',
-            ['ajaxurl' => admin_url('admin-ajax.php')]
-        );
+            // adding a js variable for ajax form submit url
+            wp_localize_script(
+                $this->plugin_name,
+                $this->plugin_name . '_object',
+                [
+                    'ajaxurl' => admin_url('admin-ajax.php'),
+                    $this->plugin_name . '_checkout_nonce' => wp_create_nonce('woocommerce-process-checkout-nonce'),
+                    'checkout_otp' => ! empty($this->options['otp_checkout']) ? 'yes' : 'no',
+                ]
+            );
+        }
     }
 
     /**
@@ -186,12 +194,6 @@ class Alpha_sms_Public
             return;
         }
         require_once 'partials/add-otp-on-login-form.php';
-    ?>
-        <input type='hidden' name='action_type' id='action_type' value='wp_reg' />
-        <label for="reg_billing_phone">
-            <?php esc_html_e('Phone', 'alpha-sms'); ?> <span class="required">*</span>
-        </label>
-    <?php
     }
 
     /**
@@ -217,14 +219,60 @@ class Alpha_sms_Public
     public function send_otp_for_reg()
     {
         $user_phone = '';
+        // Require and validate nonce for AJAX requests. Fail early if missing/invalid.
+        $action_type = isset($_POST['action_type']) ? sanitize_text_field(wp_unslash($_POST['action_type'])) : '';
+        $nonce_ok = false;
 
-        // AJAX nonce verification for WooCommerce registration
-        // Verify nonce for WooCommerce registration AJAX request
-        $wc_reg_phone_nonce = isset($_POST['wc_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wc_reg_phone_nonce'])) : '';
-        if (empty($wc_reg_phone_nonce) || !wp_verify_nonce($wc_reg_phone_nonce, 'wc_reg_phone_action')) {
+        // WC registration nonce
+        if ($action_type === 'wc_reg') {
+            $wc_reg_phone_nonce = isset($_POST['wc_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wc_reg_phone_nonce'])) : '';
+            if (empty($wc_reg_phone_nonce) || ! wp_verify_nonce($wc_reg_phone_nonce, 'wc_reg_phone_action')) {
+                $response = [
+                    'status'  => 403,
+                    'message' => __('Security Check failed. Please reload the page and try again.', 'alpha-sms'),
+                ];
+                echo wp_kses_post(json_encode($response));
+                wp_die();
+                exit;
+            }
+            $nonce_ok = true;
+        }
+
+        // WP registration nonce
+        if ($action_type === 'wp_reg') {
+            $wp_reg_phone_nonce = isset($_POST['wp_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wp_reg_phone_nonce'])) : '';
+            if (empty($wp_reg_phone_nonce) || ! wp_verify_nonce($wp_reg_phone_nonce, 'wp_reg_phone_action')) {
+                $response = [
+                    'status'  => 403,
+                    'message' => __('Security Check failed. Please reload the page and try again.', 'alpha-sms'),
+                ];
+                echo wp_kses_post(json_encode($response));
+                wp_die();
+                exit;
+            }
+            $nonce_ok = true;
+        }
+
+        // Guest checkout / other actions that rely on WooCommerce checkout nonce
+        if ($action_type === 'wc_checkout') {
+            $wc_checkout_nonce = isset($_POST['woocommerce-process-checkout-nonce']) ? sanitize_text_field(wp_unslash($_POST['woocommerce-process-checkout-nonce'])) : '';
+            if (empty($wc_checkout_nonce) || ! wp_verify_nonce($wc_checkout_nonce, 'woocommerce-process-checkout-nonce')) {
+                $response = [
+                    'status'  => 403,
+                    'message' => __('Security Check failed. Please reload the page and try again.', 'alpha-sms'),
+                ];
+                echo wp_kses_post(json_encode($response));
+                wp_die();
+                exit;
+            }
+            $nonce_ok = true;
+        }
+
+        // If action_type is missing or not recognized we cannot safely continue.
+        if (! $nonce_ok) {
             $response = [
-            'status' => 403,
-            'message' => __('Security check failed. Please reload the page and try again.', 'alpha-sms')
+                'status'  => 403,
+                'message' => __('Security Check failed. Missing or invalid action type.', 'alpha-sms'),
             ];
             echo wp_kses_post(json_encode($response));
             wp_die();
@@ -253,7 +301,7 @@ class Alpha_sms_Public
             $response = [
                 'status' => 400,
                 /* translators: Error message shown when phone number is not valid. */
-                'message' => __('Please enter a valid 11-digit Bangladeshi phone number.', 'alpha-sms')
+                'message' => __('The phone number you entered is not valid!', 'alpha-sms')
             ];
             echo wp_kses_post(json_encode($response));
             wp_die();
@@ -262,7 +310,7 @@ class Alpha_sms_Public
 
         $is_checkout_request = ! empty($_POST['action_type']) && $_POST['action_type'] === 'wc_checkout';
 
-        if ($is_checkout_request && ! is_user_logged_in() && $this->is_checkout_rate_limited()) {
+        if ($is_checkout_request && $this->is_checkout_rate_limited()) {
             $response = [
                 'status'  => 429,
                 /* translators: Error message shown when user reaches OTP request limit. */
@@ -281,7 +329,7 @@ class Alpha_sms_Public
         if (! empty($otp_expires) && $otp_expires_ts > $current_utc) {
             $response = [
                 'status'  => 400,
-                'message' => sprintf(__('OTP already sent to a phone number. Please try again after %s.', 'alpha-sms'), gmdate('i:s', $otp_expires_ts - $current_utc)),
+                'message' => 'OTP already sent to a phone number. Please try again after ' . gmdate('i:s', $otp_expires_ts - $current_utc) . ' min',
             ];
             echo wp_kses_post(json_encode($response));
             wp_die();
@@ -319,7 +367,7 @@ class Alpha_sms_Public
 
             echo wp_kses_post(json_encode($response));
             wp_die();
-            $response = ['status' => 403, 'message' => __('Security check failed. Please reload the page and try again.', 'alpha-sms')];
+            $response = ['status' => 403, 'message' => __('Security Check failed. Please reload the page and try again.', 'alpha-sms')];
             /* translators: Error message shown when security check fails during OTP send. */
         }
 
@@ -331,11 +379,12 @@ class Alpha_sms_Public
         exit;
     }
 
-    /**
-     * Validates and formats a Bangladeshi phone number.
+    /*
+    * $response = ['status' => 403, 'message' => __('Security Check failed. Please reload the page and try again.', 'alpha-sms')];
      *
-     * @param string $num The phone number to validate.
-     * @return false|string Returns the formatted phone number as a string if valid, or false if invalid.
+     * @param $num
+     *
+     * @return false|int|string
      */
     public function validateNumber($num)
     {
@@ -356,9 +405,8 @@ class Alpha_sms_Public
 
     /**
      * Generate 6 digit otp code
-     * Generates a 6-digit OTP (One Time Password) code.
-     *
-     * @return string The generated 6-digit OTP code.
+     * $response = ['status' => 400, 'message' => __('The phone number you entered is not valid!', 'alpha-sms')];
+     */
     public function generateOTP()
     {
         $otp = '';
@@ -568,19 +616,33 @@ class Alpha_sms_Public
             return;
         }
 
-        // Nonce validation for WooCommerce registration phone field
-        if (
-            isset($_POST['wc_reg_phone_nonce']) &&
-            ! empty($_POST['wc_reg_phone_nonce']) &&
-            function_exists('wp_verify_nonce') &&
-            ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['wc_reg_phone_nonce'])), 'wc_reg_phone_action')
-        ) {
-            if (function_exists('wc_add_notice')) {
-                wc_add_notice(__('Security check failed. Please try again.', 'alpha-sms'), 'error');
-            } else {
-                echo esc_html(__('Security check failed. Please try again.', 'alpha-sms'));
+        // Nonce validation for WooCommerce registration phone field: require nonce when wc_reg option enabled
+        if (! empty($this->options['wc_reg'])) {
+            $wc_reg_phone_nonce = isset($_POST['wc_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wc_reg_phone_nonce'])) : '';
+            if (empty($wc_reg_phone_nonce) || ! function_exists('wp_verify_nonce') || ! wp_verify_nonce($wc_reg_phone_nonce, 'wc_reg_phone_action')) {
+                if (function_exists('wc_add_notice')) {
+                    wc_add_notice(__('Security Check failed. Please try again.', 'alpha-sms'), 'error');
+                } else {
+                    echo esc_html(__('Security Check failed. Please try again.', 'alpha-sms'));
+                }
+                return;
             }
-            return;
+        }
+
+        // Nonce validation for WP registration phone field: require nonce when wp_reg option enabled
+        if (! empty($this->options['wp_reg'])) {
+            $wp_reg_phone_nonce = isset($_POST['wp_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wp_reg_phone_nonce'])) : '';
+            if (empty($wp_reg_phone_nonce) || ! function_exists('wp_verify_nonce') || ! wp_verify_nonce($wp_reg_phone_nonce, 'wp_reg_phone_action')) {
+                if (function_exists('add_filter')) {
+                    add_filter('registration_errors', function ($errors) {
+                        $errors->add('security_error', __('Security Check failed. Please try again.', 'alpha-sms'));
+                        return $errors;
+                    });
+                } else {
+                    echo esc_html(__('Security Check failed. Please try again.', 'alpha-sms'));
+                }
+                return;
+            }
         }
 
         if (isset($_POST['billing_phone'])) {
@@ -644,7 +706,7 @@ class Alpha_sms_Public
             // Nonce verification for WP registration form
             $wp_reg_phone_nonce = isset($_POST['wp_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wp_reg_phone_nonce'])) : '';
             if (empty($wp_reg_phone_nonce) || ! wp_verify_nonce($wp_reg_phone_nonce, 'wp_reg_phone_action')) {
-                $errors->add('security_error', __('Security check failed. Please try again.', 'alpha-sms'));
+                $errors->add('security_error', __('Security Check failed. Please try again.', 'alpha-sms'));
                 return $errors;
             }
             $this->register_form_validation($errors, $sanitized_user_login, $user_email);
@@ -680,7 +742,7 @@ class Alpha_sms_Public
         if (! empty($this->options['wp_reg']) && $action_type === 'wp_reg') {
             $wp_reg_phone_nonce = isset($_POST['wp_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wp_reg_phone_nonce'])) : '';
             if (empty($wp_reg_phone_nonce) || ! wp_verify_nonce($wp_reg_phone_nonce, 'wp_reg_phone_action')) {
-                $errors->add('security_error', __('Security check failed. Please try again.', 'alpha-sms'));
+                $errors->add('security_error', __('Security Check failed. Please try again.', 'alpha-sms'));
                 return $errors;
             }
         }
@@ -748,8 +810,8 @@ class Alpha_sms_Public
 
         // Nonce verification for guest checkout OTP
         $wc_checkout_otp_nonce = isset($_POST['woocommerce-process-checkout-nonce']) ? sanitize_text_field(wp_unslash($_POST['woocommerce-process-checkout-nonce'])) : '';
-        if (empty($wc_checkout_otp_nonce) || ! wp_verify_nonce($wc_checkout_otp_nonce, 'woocommerce-process_checkout')) {
-            wc_add_notice(__('Security check failed. Please try again.', 'alpha-sms'), 'error');
+        if (empty($wc_checkout_otp_nonce) || ! wp_verify_nonce($wc_checkout_otp_nonce, 'woocommerce-process-checkout-nonce')) {
+            wc_add_notice(__('Security Check failed. Please try again.', 'alpha-sms'), 'error');
             return;
         }
 
@@ -761,6 +823,7 @@ class Alpha_sms_Public
             if ($valid_user) {
                 $this->deletePastData();
             } else {
+                /* translators: Error message shown when user must enter a valid OTP. */
                 wc_add_notice(__('Please enter a valid OTP.', 'alpha-sms'), 'error');
             }
         } else {
@@ -961,7 +1024,7 @@ class Alpha_sms_Public
         if (!empty($this->options['wc_reg']) && isset($_POST['action_type']) && $_POST['action_type'] === 'wc_reg') {
             $wc_reg_phone_nonce = isset($_POST['wc_reg_phone_nonce']) ? sanitize_text_field(wp_unslash($_POST['wc_reg_phone_nonce'])) : '';
             if (empty($wc_reg_phone_nonce) || !wp_verify_nonce($wc_reg_phone_nonce, 'wc_reg_phone_action')) {
-                $errors->add('security_error', __('Security check failed. Please try again.', 'alpha-sms'));
+                $errors->add('security_error', __('Security Check failed. Please try again.', 'alpha-sms'));
                 return $errors;
             }
         }
@@ -1094,6 +1157,7 @@ class Alpha_sms_Public
         ];
 
         $buyer_msg = str_replace($search, $replace, $buyer_msg);
+        $buyer_msg .= ' Order notifications are verified in your order notes.';
 
         if (empty($buyer_msg)) {
             $order->add_order_note(__('Alpha SMS : Order message not found.', 'alpha-sms'));
@@ -1104,8 +1168,7 @@ class Alpha_sms_Public
         $response = $this->SendSMS($billing_phone, $buyer_msg);
 
         if ($response->error === 0) {
-
-            $order->add_order_note(__('Alpha SMS : Notified customer about his order status', 'alpha-sms'));
+            $order->add_order_note(__('Alpha SMS : Notified customer about order status ' . $new_status, 'alpha-sms'));
         } else {
             $order->add_order_note('Alpha SMS : ' . $response->msg);
         }
@@ -1372,4 +1435,5 @@ class Alpha_sms_Public
 <?php
         }
     }
+    
 }

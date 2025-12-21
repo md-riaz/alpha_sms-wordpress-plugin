@@ -144,9 +144,7 @@ $alpha_sms_has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                     </label>
                 </th>
                 <td>
-                    <input id="<?php echo esc_attr($this->plugin_name . '-api_key'); ?>" name="<?php echo esc_attr($this->plugin_name . '[api_key]'); ?>" type="text" size="55" placeholder="Enter API Key" value="<?php if (!empty($alpha_sms_api_key)) {
-                                                                                                                                                                                                                        echo esc_attr($alpha_sms_api_key);
-                                                                                                                                                                                                                    } ?>" />
+                    <input id="<?php echo esc_attr($this->plugin_name . '-api_key'); ?>" name="<?php echo esc_attr($this->plugin_name . '[api_key]'); ?>" type="text" size="55" placeholder="Enter API Key" value="<?php if (!empty($alpha_sms_api_key)) { echo esc_attr($alpha_sms_api_key); } ?>" />
                 </td>
             </tr>
 
@@ -234,10 +232,7 @@ $alpha_sms_has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                 </li>
 
                 <li>
-                    <input class="alpha-collapse" type="checkbox" id="<?php echo esc_attr($this->plugin_name . '-order_status_admin'); ?>" name="<?php echo esc_attr($this->plugin_name . '[order_status_admin]'); ?>" <?php checked(
-                                                                                                                                                                                                                            $alpha_sms_order_status_admin,
-                                                                                                                                                                                                                            1
-                                                                                                                                                                                                                        ); ?> />
+                    <input class="alpha-collapse" type="checkbox" id="<?php echo esc_attr($this->plugin_name . '-order_status_admin'); ?>" name="<?php echo esc_attr($this->plugin_name . '[order_status_admin]'); ?>" <?php checked($alpha_sms_order_status_admin, 1); ?> />
                     <label for="<?php echo esc_attr($this->plugin_name . '-order_status_admin'); ?>">
                         <span class="toggle_btn"></span>
                         <span><?php esc_attr_e('Notify Admin on New Order', 'alpha-sms'); ?></span>
@@ -253,7 +248,7 @@ $alpha_sms_has_woocommerce = is_plugin_active('woocommerce/woocommerce.php');
                                         ); ?>
                                     </label>
                                 </h4>
-                                <input id="<?php echo esc_attr($this->plugin_name . '-admin_phones'); ?>" name="<?php echo esc_attr($this->plugin_name . '[admin_phones]'); ?>" type="text" size="82" class="mb-2" value="<?php echo esc_attr($alpha_sms_admin_phones); ?>" />
+                                <input id="<?php echo esc_attr($this->plugin_name . '-admin_phones'); ?>" name="<?php echo esc_attr($this->plugin_name . '[admin_phones]'); ?>" type="text" size="82" class="mb-2" value="<?php echo esc_attr($alpha_sms_admin_phones, 'alpha-sms'); ?>" />
                                 <span class="my-2 d-block sms_tokens"><span>[store_name]</span> |
                                     <span>[billing_first_name]</span> |
                                     <span>[order_id]</span> |

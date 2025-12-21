@@ -281,8 +281,7 @@ class Alpha_sms_Admin
 
         if (!$this->checkAPI($options['api_key'])) {
 
-            $options['order_status'] =
-                $options['wp_reg'] =
+            $options['wp_reg'] =
                 $options['wp_login'] =
                 $options['wc_reg'] =
                 $options['wc_login'] =
@@ -295,6 +294,8 @@ class Alpha_sms_Admin
                 $options['order_status_refunded'] =
                 $options['order_status_failed'] =
                 $options['order_status_admin'] = 0;
+
+            $options['api_key'] = '';
 
             add_settings_error(
                 $this->plugin_name, // Slug title of setting

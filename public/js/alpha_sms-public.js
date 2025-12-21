@@ -122,6 +122,7 @@ function WC_Reg_SendOtp(e) {
    let email = wc_reg_form.find('#reg_email').val();
    let password = wc_reg_form.find('#reg_password').val();
    let wc_reg_phone_nonce = wc_reg_form.find('#wc_reg_phone_nonce').val();
+   let action_type = wc_reg_form.find('#action_type').val();
 
    if (!phone || !email) {
       alert_wrapper.html(showError('Fill in the required fields.'));
@@ -140,6 +141,7 @@ function WC_Reg_SendOtp(e) {
       billing_phone: phone,
       email: email,
       wc_reg_phone_nonce: wc_reg_phone_nonce,
+      action_type: action_type,
    };
 
    if (password) {
@@ -210,6 +212,11 @@ function WC_Checkout_SendOtp(e) {
       billing_phone: phone,
       action_type: checkout_form.find('#action_type').val(),
    };
+   // include checkout nonce if present
+   const checkoutNonceField = checkout_form.find('input[name="woocommerce-process-checkout-nonce"]');
+   if (checkoutNonceField && checkoutNonceField.length) {
+      data['woocommerce-process-checkout-nonce'] = checkoutNonceField.val();
+   }
 
    $.post(
       alpha_sms_object.ajaxurl,
