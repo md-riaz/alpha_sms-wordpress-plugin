@@ -1157,7 +1157,6 @@ class Alpha_sms_Public
         ];
 
         $buyer_msg = str_replace($search, $replace, $buyer_msg);
-        $buyer_msg .= ' Order notifications are verified in your order notes.';
 
         if (empty($buyer_msg)) {
             $order->add_order_note(__('Alpha SMS : Order message not found.', 'alpha-sms'));
